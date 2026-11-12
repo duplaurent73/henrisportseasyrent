@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EasyRent Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+:root{
+    --bg:#f7f9fc; --panel:#ffffff; --text:#0f172a; --muted:#64748b;
+    --blue:#2563eb; --green:#10b981; --orange:#f59e0b; --purple:#7c3aed;
+    --radius:16px;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:Inter,Segoe UI,Arial,sans-serif;padding:20px;}
+h1{font-size:32px;margin-bottom:5px;}
+.subtitle{color:var(--muted);margin-bottom:20px;font-size:14px;}
+.header-bar{display:flex;align-items:center;gap:15px;flex-wrap:wrap;margin-bottom:15px;}
+#branchFilter{padding:10px 16px;font-size:15px;border:1px solid #e2e8f0;border-radius:12px;background:white;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,.05);min-width:200px;}
+.date-bar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:25px;}
+.date-btn{
+    padding:9px 18px;font-size:14px;border:1px solid #e2e8f0;border-radius:20px;
+    background:white;color:var(--text);cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,.05);
+    transition:all .15s;font-weight:500;
+}
+.date-btn:hover{border-color:var(--blue);color:var(--blue);}
+.date-btn.active{background:var(--blue);border-color:var(--blue);color:white;}
+.branch-kpis{margin-bottom:25px;}
+.branch-kpi-block{background:var(--panel);border-radius:var(--radius);padding:16px 20px;margin-bottom:15px;box-shadow:0 1px 3px rgba(0,0,0,.05),0 6px 24px rgba(0,0,0,.05);}
+.branch-kpi-block h3{margin-bottom:12px;font-size:15px;color:var(--blue);font-weight:600;}
+.branch-kpi-row{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;}
+@media(max-width:1200px){.branch-kpi-row{grid-template-columns:repeat(2,1fr);}}
+@media(max-width:700px){.branch-kpi-row{grid-template-columns:1fr;}}
+.dashboard{display:grid;grid-template-columns:repeat(12,1fr);gap:20px;}
+.kpi{background:white;border-radius:var(--radius);padding:20px;display:flex;gap:15px;align-items:center;box-shadow:0 1px 3px rgba(0,0,0,.05),0 6px 24px rgba(0,0,0,.05);}
+.kpi-icon{width:55px;height:55px;border-radius:14px;display:flex;justify-content:center;align-items:center;font-size:24px;flex-shrink:0;}
+.kpi-title{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;}
+.kpi-value{font-size:26px;font-weight:700;margin-top:4px;}
+.panel{background:white;border-radius:var(--radius);padding:20px;box-shadow:0 1px 3px rgba(0,0,0,.05),0 6px 24px rgba(0,0,0,.05);}
+.panel h2{font-size:16px;margin-bottom:15px;font-weight:600;}
+.panel-full{grid-column:span 12;}
+.panel-half{grid-column:span 6;}
+.panel-third{grid-column:span 4;}
+@media(max-width:1000px){.panel-half,.panel-third{grid-column:span 12;}}
+canvas{max-height:300px;}
+table{width:100%;border-collapse:collapse;font-size:14px;}
+th{text-align:left;padding:10px 8px;color:var(--muted);font-size:12px;text-transform:uppercase;border-bottom:2px solid #e2e8f0;}
+td{padding:10px 8px;border-bottom:1px solid #f1f5f9;}
+tr:last-child td{border-bottom:none;}
+.badge{display:inline-block;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:600;margin-right:8px;}
+.badge.location{background:#dbeafe;color:var(--blue);}
+.kpi-mini{background:#f8fafc;border-radius:12px;padding:12px;}
+.kpi-mini .kpi-title{font-size:11px;}
+.kpi-mini .kpi-value{font-size:20px;}
+</style>
+</head>
+<body>
+
+<h1>🏔️ EasyRent Dashboard</h1>
+<div class="subtitle" id="periodLabel">Chargement...</div>
+
+<div class="header-bar">
+    <select id="branchFilter">
+        <option value="">🏪 Tous les magasins</option>
+    </select>
+</div>
+
+<div class="date-bar">
+    <button class="date-btn active" data-range="today">Aujourd'hui</button>
+    <button class="date-btn" data-range="yesterday">Hier</button>
+    <button class="date-btn" data-range="week">Cette semaine</button>
+    <button class="date-btn" data-range="month">Ce mois</button>
+</div>
+
+<div class="branch-kpis" id="branchKpis"></div>
+
+<div class="dashboard">
+    <div class="kpi" style="grid-column:span 3;">
+        <div class="kpi-icon" style="background:#dbeafe;">💰</div>
+        <div>
+            <div class="kpi-title">CA Total</div>
+            <div class="kpi-value" id="caTotal">0 €</div>
+        </div>
+    </div>
+    <div class="kpi" style="grid-column:span 3;">
+        <div class="kpi-icon" style="background:#fce7f3;">🧾</div>
+        <div>
+            <div class="kpi-title">Factures</div>
+            <div class="kpi-value" id="nbFactures">0</div>
+        </div>
+    </div>
+    <div class="kpi" style="grid-column:span 3;">
+        <div class="kpi-icon" style="background:#ffedd5;">👥</div>
+        <div>
+            <div class="kpi-title">Clients</div>
+            <div class="kpi-value" id="nbClients">0</div>
+        </div>
+    </div>
+    <div class="kpi" style="grid-column:span 3;">
+        <div class="kpi-icon" style="background:#dcfce7;">🛒</div>
+        <div>
+            <div class="kpi-title">Panier Moyen</div>
+            <div class="kpi-value" id="panierMoyen">0 €</div>
+        </div>
+    </div>
+
+    <div class="panel panel-full">
+        <h2>📈 CA horaire</h2>
+        <canvas id="hourlyChart"></canvas>
+    </div>
+
+    <div class="panel panel-half">
+        <h2>💳 Paiements</h2>
+        <canvas id="paymentChart"></canvas>
+    </div>
+
+    <div class="panel panel-half">
+        <h2>🏷️ Activités (baseSyscode)</h2>
+        <canvas id="syscodeChart"></canvas>
+    </div>
+
+    <div class="panel panel-full">
+        <h2>🎿 Groupes de location</h2>
+        <canvas id="rentalGroupChart"></canvas>
+    </div>
+
+    <div class="panel panel-third">
+        <h2><span class="badge location">LOCATION</span>Top Locations</h2>
+        <table id="locationTable">
+            <thead><tr><th>Article</th><th>Contrats</th><th>Jours</th><th>CA</th></tr></thead>
+            <tbody></tbody>
+        </table>
+    </div>
+
+    <div class="panel panel-third">
+        <h2><span class="badge" style="background:#dcfce7;color:var(--green);">VENTE</span>Top Ventes</h2>
+        <table id="salesTable">
+            <thead><tr><th>Article</th><th>Qté</th><th>CA</th></tr></thead>
+            <tbody></tbody>
+        </table>
+    </div>
+
+    <div class="panel panel-third">
+        <h2><span class="badge" style="background:#ffedd5;color:var(--orange);">SERVICE</span>Top Services</h2>
+        <table id="serviceTable">
+            <thead><tr><th>Service</th><th>Nb</th><th>CA</th></tr></thead>
+            <tbody></tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+// ============================================
+// ⚙️ CONFIGURATION DES BASE SYSCODES — Modifie ici !
+// ============================================
+const SYSCODES = {
+    L: { label: 'Location', color: '#2563eb', icon: '🎿' },
+    M: { label: 'Vente',    color: '#10b981', icon: '🛒' },
+    S: { label: 'Service',  color: '#f59e0b', icon: '🔧' }
+    // Ajoute ici : G: { label: 'Garantie', color: '#8b5cf6', icon: '🛡️' }
+};
+
+const BASE_URL = 'http://80.13.18.153:11122/easyrest/rest/easyrest/invoices?accessId=bweb123!&top=500';
+
+let allInvoices = [];
+let currentRange = 'today';
+let charts = {};
+
+function getDateBounds(range) {
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    let start, end, label;
+
+    switch(range) {
+        case 'today':
+            start = today;
+            end = new Date(today); end.setDate(end.getDate() + 1);
+            label = "Aujourd'hui (" + today.toLocaleDateString('fr-FR') + ")";
+            break;
+        case 'yesterday':
+            start = new Date(today); start.setDate(start.getDate() - 1);
+            end = today;
+            label = "Hier (" + start.toLocaleDateString('fr-FR') + ")";
+            break;
+        case 'week':
+            start = new Date(today);
+            const day = start.getDay() || 7;
+            start.setDate(start.getDate() - day + 1);
+            end = new Date(today); end.setDate(end.getDate() + 1);
+            label = "Semaine du " + start.toLocaleDateString('fr-FR');
+            break;
+        case 'month':
+            start = new Date(now.getFullYear(), now.getMonth(), 1);
+            end = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+            label = now.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
+            break;
+    }
+    return { start, end, label };
+}
+
+function filterByDate(invoices, range) {
+    const { start, end } = getDateBounds(range);
+    return invoices.filter(inv => {
+        const d = new Date(inv.createdAt);
+        return d >= start && d < end;
+    });
+}
+
+async function loadInvoices(createdAfter) {
+    let invoices = [];
+    let skip = 0;
+    const url = BASE_URL + '&createdAfter=' + createdAfter + '&skip=';
+
+    while(true) {
+        const response = await fetch(url + skip);
+        const batch = await response.json();
+        invoices.push(...batch);
+        if(batch.length < 500) break;
+        skip += 500;
+    }
+    return invoices;
+}
+
+function euro(val) {
+    return Number(val || 0).toLocaleString('fr-FR', { style:'currency', currency:'EUR' });
+}
+
+function chartOptions() {
+    return {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { position: 'bottom' } }
+    };
+}
+
+function destroyCharts() {
+    Object.values(charts).forEach(c => c.destroy());
+    charts = {};
+}
+
+function fillTable(selector, data, mapper) {
+    const tbody = document.querySelector(selector);
+    tbody.innerHTML = '';
+    data.forEach(row => { tbody.innerHTML += mapper(row); });
+}
+
+function renderBranchKpis(invoices) {
+    const container = document.getElementById('branchKpis');
+    const branches = {};
+    invoices.forEach(inv => {
+        const b = inv.branchCode || 'Inconnu';
+        if(!branches[b]) branches[b] = { ca:0, count:0, clients:new Set() };
+        branches[b].ca += inv.totalInclTax;
+        branches[b].count++;
+        branches[b].clients.add(inv.customerData.customerId);
+    });
+
+    container.innerHTML = '';
+    Object.entries(branches).sort((a,b) => b[1].ca - a[1].ca).forEach(([name, data]) => {
+        const div = document.createElement('div');
+        div.className = 'branch-kpi-block';
+        div.innerHTML = `
+            <h3>🏪 ${name}</h3>
+            <div class="branch-kpi-row">
+                <div class="kpi-mini"><div class="kpi-title">CA</div><div class="kpi-value">${euro(data.ca)}</div></div>
+                <div class="kpi-mini"><div class="kpi-title">Factures</div><div class="kpi-value">${data.count}</div></div>
+                <div class="kpi-mini"><div class="kpi-title">Clients</div><div class="kpi-value">${data.clients.size}</div></div>
+                <div class="kpi-mini"><div class="kpi-title">Panier moy.</div><div class="kpi-value">${euro(data.ca/data.count)}</div></div>
+                <div class="kpi-mini"><div class="kpi-title">Part CA</div><div class="kpi-value">${((data.ca/invoices.reduce((s,i)=>s+i.totalInclTax,0))*100).toFixed(1)}%</div></div>
+            </div>
+        `;
+        container.appendChild(div);
+    });
+}
+
+function render(invoices, label) {
+    destroyCharts();
+
+    let totalCA = 0;
+    const customers = new Set();
+    const payments = {};
+    const groups = {};
+    const hourly = {};
+    const syscodes = {};
+    Object.keys(SYSCODES).forEach(c => syscodes[c] = 0);
+    const locations = {}, ventes = {}, services = {};
+    let totalDuration = 0, totalContracts = 0;
+
+    invoices.forEach(invoice => {
+        totalCA += invoice.totalInclTax;
+        customers.add(invoice.customerData.customerId);
+
+        const hour = new Date(invoice.createdAt).getHours();
+        hourly[hour] = (hourly[hour] || 0) + invoice.totalInclTax;
+
+        invoice.payments.forEach(p => {
+            payments[p.paymentTypeName] = (payments[p.paymentTypeName] || 0) + p.amount;
+        });
+
+        invoice.items.forEach(item => {
+            // 🔑 UTILISATION DE baseSyscode AU LIEU DE syscode
+            const code = item.baseSyscode || item.syscode;
+
+            if(syscodes[code] !== undefined) {
+                syscodes[code] += item.totalPrice;
+            }
+
+            if(code === 'L') {
+                if(!locations[item.articleName]) locations[item.articleName] = { contrats:0, jours:0, ca:0 };
+                locations[item.articleName].contrats++;
+                locations[item.articleName].jours += item.quantity;
+                locations[item.articleName].ca += item.totalPrice;
+                totalContracts++;
+                if(item.rentalData) {
+                    totalDuration += item.rentalData.duration;
+                    const g = item.rentalData.rentalGroupName;
+                    groups[g] = (groups[g] || 0) + item.totalPrice;
+                }
+            }
+            if(code === 'M') {
+                if(!ventes[item.articleName]) ventes[item.articleName] = { qty:0, ca:0 };
+                ventes[item.articleName].qty += item.quantity;
+                ventes[item.articleName].ca += item.totalPrice;
+            }
+            if(code === 'S') {
+                if(!services[item.articleName]) services[item.articleName] = { nb:0, ca:0 };
+                services[item.articleName].nb++;
+                services[item.articleName].ca += item.totalPrice;
+            }
+        });
+    });
+
+    document.getElementById('caTotal').innerText = euro(totalCA);
+    document.getElementById('nbFactures').innerText = invoices.length;
+    document.getElementById('nbClients').innerText = customers.size;
+    document.getElementById('panierMoyen').innerText = invoices.length ? euro(totalCA/invoices.length) : '0 €';
+    document.getElementById('periodLabel').innerText = label + ' — ' + invoices.length + ' factures';
+
+    const hours = Object.keys(hourly).sort((a,b) => a-b);
+    charts.hourly = new Chart(document.getElementById('hourlyChart'), {
+        type: 'line',
+        data: {
+            labels: hours.map(h => h + 'h'),
+            datasets: [{
+                label: 'CA (€)',
+                data: hours.map(h => hourly[h]),
+                borderColor: '#2563eb',
+                backgroundColor: 'rgba(37,99,235,0.1)',
+                fill: true,
+                tension: 0.3
+            }]
+        },
+        options: chartOptions()
+    });
+
+    charts.payment = new Chart(document.getElementById('paymentChart'), {
+        type: 'doughnut',
+        data: {
+            labels: Object.keys(payments),
+            datasets: [{
+                data: Object.values(payments),
+                backgroundColor: ['#2563eb','#10b981','#f59e0b','#8b5cf6','#ec4899','#14b8a6']
+            }]
+        },
+        options: chartOptions()
+    });
+
+    const activeSyscodes = Object.keys(SYSCODES).filter(c => syscodes[c] > 0);
+    charts.syscode = new Chart(document.getElementById('syscodeChart'), {
+        type: 'pie',
+        data: {
+            labels: activeSyscodes.map(c => SYSCODES[c].icon + ' ' + SYSCODES[c].label),
+            datasets: [{
+                data: activeSyscodes.map(c => syscodes[c]),
+                backgroundColor: activeSyscodes.map(c => SYSCODES[c].color)
+            }]
+        },
+        options: chartOptions()
+    });
+
+    const groupEntries = Object.entries(groups).sort((a,b) => b[1]-a[1]).slice(0,10);
+    charts.groups = new Chart(document.getElementById('rentalGroupChart'), {
+        type: 'bar',
+        data: {
+            labels: groupEntries.map(g => g[0]),
+            datasets: [{
+                label: 'CA (€)',
+                data: groupEntries.map(g => g[1]),
+                backgroundColor: '#7c3aed'
+            }]
+        },
+        options: { ...chartOptions(), scales: { y: { beginAtZero: true } } }
+    });
+
+    fillTable('#locationTable tbody',
+        Object.entries(locations).sort((a,b)=>b[1].ca-a[1].ca).slice(0,10),
+        ([n,r])=>`<tr><td>${n}</td><td>${r.contrats}</td><td>${r.jours}</td><td>${euro(r.ca)}</td></tr>`);
+    fillTable('#salesTable tbody',
+        Object.entries(ventes).sort((a,b)=>b[1].ca-a[1].ca).slice(0,10),
+        ([n,r])=>`<tr><td>${n}</td><td>${r.qty}</td><td>${euro(r.ca)}</td></tr>`);
+    fillTable('#serviceTable tbody',
+        Object.entries(services).sort((a,b)=>b[1].ca-a[1].ca).slice(0,10),
+        ([n,r])=>`<tr><td>${n}</td><td>${r.nb}</td><td>${euro(r.ca)}</td></tr>`);
+}
+
+async function refresh() {
+    const { start, label } = getDateBounds(currentRange);
+    const createdAfter = start.toISOString().split('T')[0];
+
+    allInvoices = await loadInvoices(createdAfter);
+    const filtered = filterByDate(allInvoices, currentRange);
+
+    const select = document.getElementById('branchFilter');
+    const currentBranch = select.value;
+    select.innerHTML = '<option value="">🏪 Tous les magasins</option>';
+    [...new Set(filtered.map(i => i.branchCode))].sort().forEach(b => {
+        const opt = document.createElement('option');
+        opt.value = b;
+        opt.textContent = '🏪 ' + b;
+        select.appendChild(opt);
+    });
+    select.value = currentBranch;
+
+    renderBranchKpis(filtered);
+    const v = select.value;
+    render(v ? filtered.filter(i => i.branchCode === v) : filtered, label + (v ? ' — ' + v : ''));
+}
+
+async function start() {
+    const select = document.getElementById('branchFilter');
+    select.addEventListener('change', () => {
+        const filtered = filterByDate(allInvoices, currentRange);
+        const { label } = getDateBounds(currentRange);
+        const v = select.value;
+        render(v ? filtered.filter(i => i.branchCode === v) : filtered, label + (v ? ' — ' + v : ''));
+    });
+
+    document.querySelectorAll('.date-btn').forEach(btn => {
+        btn.addEventListener('click', async () => {
+            document.querySelectorAll('.date-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            currentRange = btn.dataset.range;
+            await refresh();
+        });
+    });
+
+    await refresh();
+}
+
+start();
+</script>
+</body>
+</html>
