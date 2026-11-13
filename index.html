@@ -2,63 +2,100 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>EasyRent Dashboard</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
 :root{
-    --bg:#f7f9fc; --panel:#ffffff; --text:#0f172a; --muted:#64748b;
-    --blue:#2563eb; --green:#10b981; --orange:#f59e0b; --purple:#7c3aed;
-    --radius:16px;
+    --bg:#f2f2f7; --panel:#ffffff; --text:#000000; --muted:#8e8e93;
+    --blue:#007aff; --green:#34c759; --orange:#ff9500; --purple:#af52de;
+    --radius:20px;
+    --shadow:0 2px 12px rgba(0,0,0,.06);
 }
-*{margin:0;padding:0;box-sizing:border-box;}
-body{background:var(--bg);color:var(--text);font-family:Inter,Segoe UI,Arial,sans-serif;padding:20px;}
-h1{font-size:32px;margin-bottom:5px;}
-.subtitle{color:var(--muted);margin-bottom:20px;font-size:14px;}
-.header-bar{display:flex;align-items:center;gap:15px;flex-wrap:wrap;margin-bottom:15px;}
-#branchFilter{padding:10px 16px;font-size:15px;border:1px solid #e2e8f0;border-radius:12px;background:white;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,.05);min-width:200px;}
-.date-bar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:25px;}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+body{
+    background:var(--bg);color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Segoe UI',Roboto,sans-serif;
+    padding:16px 14px 40px;
+    -webkit-font-smoothing:antialiased;
+}
+h1{font-size:28px;font-weight:700;margin-bottom:4px;letter-spacing:-.5px;}
+.subtitle{color:var(--muted);margin-bottom:18px;font-size:14px;font-weight:500;}
+
+.header-bar{margin-bottom:12px;}
+#branchFilter{
+    width:100%;padding:12px 16px;font-size:16px;font-weight:500;
+    border:none;border-radius:14px;background:var(--panel);
+    box-shadow:var(--shadow);cursor:pointer;appearance:none;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%238e8e93' stroke-width='2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat:no-repeat;background-position:right 16px center;
+}
+
+.date-bar{display:flex;gap:8px;margin-bottom:20px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none;}
+.date-bar::-webkit-scrollbar{display:none;}
 .date-btn{
-    padding:9px 18px;font-size:14px;border:1px solid #e2e8f0;border-radius:20px;
-    background:white;color:var(--text);cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,.05);
-    transition:all .15s;font-weight:500;
+    flex-shrink:0;padding:8px 16px;font-size:14px;font-weight:600;
+    border:none;border-radius:999px;background:var(--panel);color:var(--text);
+    box-shadow:var(--shadow);cursor:pointer;transition:all .2s;
 }
-.date-btn:hover{border-color:var(--blue);color:var(--blue);}
-.date-btn.active{background:var(--blue);border-color:var(--blue);color:white;}
-.branch-kpis{margin-bottom:25px;}
-.branch-kpi-block{background:var(--panel);border-radius:var(--radius);padding:16px 20px;margin-bottom:15px;box-shadow:0 1px 3px rgba(0,0,0,.05),0 6px 24px rgba(0,0,0,.05);}
-.branch-kpi-block h3{margin-bottom:12px;font-size:15px;color:var(--blue);font-weight:600;}
-.branch-kpi-row{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;}
-@media(max-width:1200px){.branch-kpi-row{grid-template-columns:repeat(2,1fr);}}
-@media(max-width:700px){.branch-kpi-row{grid-template-columns:1fr;}}
-.dashboard{display:grid;grid-template-columns:repeat(12,1fr);gap:20px;}
-.kpi{background:white;border-radius:var(--radius);padding:20px;display:flex;gap:15px;align-items:center;box-shadow:0 1px 3px rgba(0,0,0,.05),0 6px 24px rgba(0,0,0,.05);}
-.kpi-icon{width:55px;height:55px;border-radius:14px;display:flex;justify-content:center;align-items:center;font-size:24px;flex-shrink:0;}
-.kpi-title{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;}
-.kpi-value{font-size:26px;font-weight:700;margin-top:4px;}
-.panel{background:white;border-radius:var(--radius);padding:20px;box-shadow:0 1px 3px rgba(0,0,0,.05),0 6px 24px rgba(0,0,0,.05);}
-.panel h2{font-size:16px;margin-bottom:15px;font-weight:600;}
-.panel-full{grid-column:span 12;}
-.panel-half{grid-column:span 6;}
-.panel-third{grid-column:span 4;}
-@media(max-width:1000px){.panel-half,.panel-third{grid-column:span 12;}}
-canvas{max-height:300px;}
-table{width:100%;border-collapse:collapse;font-size:14px;}
-th{text-align:left;padding:10px 8px;color:var(--muted);font-size:12px;text-transform:uppercase;border-bottom:2px solid #e2e8f0;}
-td{padding:10px 8px;border-bottom:1px solid #f1f5f9;}
+.date-btn.active{background:var(--blue);color:white;}
+
+.branch-kpis{margin-bottom:20px;}
+.branch-kpi-block{
+    background:var(--panel);border-radius:var(--radius);padding:16px;
+    margin-bottom:12px;box-shadow:var(--shadow);
+}
+.branch-kpi-block h3{margin-bottom:12px;font-size:16px;color:var(--blue);font-weight:700;}
+.branch-kpi-row{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;}
+.kpi-mini{background:#f2f2f7;border-radius:14px;padding:12px;}
+.kpi-mini .kpi-title{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.3px;}
+.kpi-mini .kpi-value{font-size:18px;font-weight:700;margin-top:2px;}
+
+.dashboard{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;}
+.kpi{
+    background:var(--panel);border-radius:var(--radius);padding:16px;
+    display:flex;flex-direction:column;gap:8px;box-shadow:var(--shadow);
+}
+.kpi-icon{width:44px;height:44px;border-radius:12px;display:flex;justify-content:center;align-items:center;font-size:20px;}
+.kpi-title{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;font-weight:600;}
+.kpi-value{font-size:22px;font-weight:700;letter-spacing:-.3px;}
+
+.panel{
+    background:var(--panel);border-radius:var(--radius);padding:16px;
+    box-shadow:var(--shadow);grid-column:span 2;overflow:hidden;
+}
+.panel h2{font-size:16px;margin-bottom:12px;font-weight:700;letter-spacing:-.2px;}
+canvas{max-height:220px;}
+
+.table-wrapper{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+table{width:100%;border-collapse:collapse;font-size:13px;min-width:280px;}
+th{text-align:left;padding:8px 6px;color:var(--muted);font-size:11px;text-transform:uppercase;font-weight:600;border-bottom:1px solid #e5e5ea;}
+td{padding:10px 6px;border-bottom:1px solid #f2f2f7;font-weight:500;}
 tr:last-child td{border-bottom:none;}
-.badge{display:inline-block;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:600;margin-right:8px;}
-.badge.location{background:#dbeafe;color:var(--blue);}
-.kpi-mini{background:#f8fafc;border-radius:12px;padding:12px;}
-.kpi-mini .kpi-title{font-size:11px;}
-.kpi-mini .kpi-value{font-size:20px;}
-.loading{text-align:center;padding:40px;color:var(--muted);}
-.error{background:#fee2e2;color:#991b1b;padding:15px;border-radius:12px;margin:20px 0;}
+.badge{display:inline-block;padding:3px 8px;border-radius:8px;font-size:10px;font-weight:700;margin-right:6px;text-transform:uppercase;}
+.badge.location{background:#e5f0ff;color:var(--blue);}
+
+@media(min-width:768px){
+    body{padding:24px 32px 60px;}
+    h1{font-size:34px;}
+    .header-bar{display:flex;gap:12px;}
+    #branchFilter{width:auto;min-width:220px;}
+    .date-bar{margin-bottom:24px;}
+    .branch-kpi-row{grid-template-columns:repeat(5,1fr);}
+    .dashboard{grid-template-columns:repeat(12,1fr);gap:20px;}
+    .kpi{grid-column:span 3;flex-direction:row;align-items:center;gap:14px;padding:20px;}
+    .kpi-icon{width:52px;height:52px;font-size:24px;}
+    .kpi-value{font-size:26px;}
+    .panel{grid-column:span 12;padding:20px;}
+    .panel-half{grid-column:span 6;}
+    .panel-third{grid-column:span 4;}
+    canvas{max-height:300px;}
+}
 </style>
 </head>
 <body>
 
-<h1>🏔️ EasyRent Dashboard</h1>
+<h1>🏔️ EasyRent</h1>
 <div class="subtitle" id="periodLabel">Chargement...</div>
 
 <div class="header-bar">
@@ -70,101 +107,101 @@ tr:last-child td{border-bottom:none;}
 <div class="date-bar">
     <button class="date-btn active" data-range="today">Aujourd'hui</button>
     <button class="date-btn" data-range="yesterday">Hier</button>
-    <button class="date-btn" data-range="week">Cette semaine</button>
-    <button class="date-btn" data-range="month">Ce mois</button>
+    <button class="date-btn" data-range="week">Semaine</button>
+    <button class="date-btn" data-range="month">Mois</button>
 </div>
 
 <div class="branch-kpis" id="branchKpis"></div>
 
 <div class="dashboard">
-    <div class="kpi" style="grid-column:span 3;">
-        <div class="kpi-icon" style="background:#dbeafe;">💰</div>
+    <div class="kpi">
+        <div class="kpi-icon" style="background:#e5f0ff;">💰</div>
         <div>
             <div class="kpi-title">CA Total</div>
             <div class="kpi-value" id="caTotal">0 €</div>
         </div>
     </div>
-    <div class="kpi" style="grid-column:span 3;">
-        <div class="kpi-icon" style="background:#fce7f3;">🧾</div>
+    <div class="kpi">
+        <div class="kpi-icon" style="background:#ffe5f0;">🧾</div>
         <div>
             <div class="kpi-title">Factures</div>
             <div class="kpi-value" id="nbFactures">0</div>
         </div>
     </div>
-    <div class="kpi" style="grid-column:span 3;">
-        <div class="kpi-icon" style="background:#ffedd5;">👥</div>
+    <div class="kpi">
+        <div class="kpi-icon" style="background:#fff0e0;">👥</div>
         <div>
             <div class="kpi-title">Clients</div>
             <div class="kpi-value" id="nbClients">0</div>
         </div>
     </div>
-    <div class="kpi" style="grid-column:span 3;">
-        <div class="kpi-icon" style="background:#dcfce7;">🛒</div>
+    <div class="kpi">
+        <div class="kpi-icon" style="background:#e0f8e9;">🛒</div>
         <div>
             <div class="kpi-title">Panier Moyen</div>
             <div class="kpi-value" id="panierMoyen">0 €</div>
         </div>
     </div>
 
-    <div class="panel panel-full">
+    <div class="panel">
         <h2>📈 CA horaire</h2>
         <canvas id="hourlyChart"></canvas>
     </div>
 
-    <div class="panel panel-half">
+    <div class="panel" style="grid-column:span 1;">
         <h2>💳 Paiements</h2>
         <canvas id="paymentChart"></canvas>
     </div>
 
-    <div class="panel panel-half">
-        <h2>🏷️ Activités (baseSyscode)</h2>
+    <div class="panel" style="grid-column:span 1;">
+        <h2>🏷️ Activités</h2>
         <canvas id="syscodeChart"></canvas>
     </div>
 
-    <div class="panel panel-full">
+    <div class="panel">
         <h2>🎿 Groupes de location</h2>
         <canvas id="rentalGroupChart"></canvas>
     </div>
 
-    <div class="panel panel-third">
-        <h2><span class="badge location">LOCATION</span>Top Locations</h2>
+    <div class="panel">
+        <h2><span class="badge location">Location</span>Top Locations</h2>
+        <div class="table-wrapper">
         <table id="locationTable">
             <thead><tr><th>Article</th><th>Contrats</th><th>Jours</th><th>CA</th></tr></thead>
             <tbody></tbody>
         </table>
+        </div>
     </div>
 
-    <div class="panel panel-third">
-        <h2><span class="badge" style="background:#dcfce7;color:var(--green);">VENTE</span>Top Ventes</h2>
+    <div class="panel">
+        <h2><span class="badge" style="background:#e0f8e9;color:var(--green);">Vente</span>Top Ventes</h2>
+        <div class="table-wrapper">
         <table id="salesTable">
             <thead><tr><th>Article</th><th>Qté</th><th>CA</th></tr></thead>
             <tbody></tbody>
         </table>
+        </div>
     </div>
 
-    <div class="panel panel-third">
-        <h2><span class="badge" style="background:#ffedd5;color:var(--orange);">SERVICE</span>Top Services</h2>
+    <div class="panel">
+        <h2><span class="badge" style="background:#fff0e0;color:var(--orange);">Service</span>Top Services</h2>
+        <div class="table-wrapper">
         <table id="serviceTable">
             <thead><tr><th>Service</th><th>Nb</th><th>CA</th></tr></thead>
             <tbody></tbody>
         </table>
+        </div>
     </div>
 </div>
 
 <script>
-// ============================================
-// ⚙️ CONFIGURATION
-// ============================================
 const SYSCODES = {
-    L: { label: 'Location', color: '#2563eb', icon: '🎿' },
-    M: { label: 'Vente',    color: '#10b981', icon: '🛒' },
-    S: { label: 'Service',  color: '#f59e0b', icon: '🔧' }
+    L: { label: 'Location', color: '#007aff', icon: '🎿' },
+    M: { label: 'Vente',    color: '#34c759', icon: '🛒' },
+    S: { label: 'Service',  color: '#ff9500', icon: '🔧' }
 };
 
-// 🔧 URL de ton API EasyRent (sans proxy)
 const API_BASE = 'https://80.13.18.153:11133/easyrest/rest/easyrest/invoices?accessId=bweb123!&top=500';
-
-// 🌐 Proxy CORS fiable pour GitHub Pages
 const PROXY = 'https://api.allorigins.win/raw?url=';
 
 let allInvoices = [];
@@ -175,30 +212,22 @@ function getDateBounds(range) {
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     let start, end, label;
-
     switch(range) {
         case 'today':
-            start = today;
-            end = new Date(today); end.setDate(end.getDate() + 1);
-            label = "Aujourd'hui (" + today.toLocaleDateString('fr-FR') + ")";
-            break;
+            start = today; end = new Date(today); end.setDate(end.getDate() + 1);
+            label = "Aujourd'hui (" + today.toLocaleDateString('fr-FR') + ")"; break;
         case 'yesterday':
-            start = new Date(today); start.setDate(start.getDate() - 1);
-            end = today;
-            label = "Hier (" + start.toLocaleDateString('fr-FR') + ")";
-            break;
+            start = new Date(today); start.setDate(start.getDate() - 1); end = today;
+            label = "Hier (" + start.toLocaleDateString('fr-FR') + ")"; break;
         case 'week':
-            start = new Date(today);
-            const day = start.getDay() || 7;
+            start = new Date(today); const day = start.getDay() || 7;
             start.setDate(start.getDate() - day + 1);
             end = new Date(today); end.setDate(end.getDate() + 1);
-            label = "Semaine du " + start.toLocaleDateString('fr-FR');
-            break;
+            label = "Semaine du " + start.toLocaleDateString('fr-FR'); break;
         case 'month':
             start = new Date(now.getFullYear(), now.getMonth(), 1);
             end = new Date(now.getFullYear(), now.getMonth() + 1, 1);
-            label = now.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
-            break;
+            label = now.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' }); break;
     }
     return { start, end, label };
 }
@@ -214,29 +243,20 @@ function filterByDate(invoices, range) {
 async function loadInvoices(createdAfter) {
     let invoices = [];
     let skip = 0;
-
     while(true) {
-        // Construction de l'URL complète puis encodage pour le proxy
         const fullUrl = API_BASE + '&createdAfter=' + createdAfter + '&skip=' + skip;
         const proxyUrl = PROXY + encodeURIComponent(fullUrl);
-
         try {
             const response = await fetch(proxyUrl);
             if (!response.ok) throw new Error('HTTP ' + response.status);
             const batch = await response.json();
-
-            if (!Array.isArray(batch)) {
-                console.error('Réponse non valide:', batch);
-                break;
-            }
-
+            if (!Array.isArray(batch)) { console.error('Réponse non valide:', batch); break; }
             invoices.push(...batch);
             if(batch.length < 500) break;
             skip += 500;
         } catch(e) {
-            console.error('Erreur chargement:', e);
-            document.getElementById('periodLabel').innerHTML =
-                '<span class="error">⚠️ Erreur de connexion à l\'API. Vérifie que le serveur est accessible.</span>';
+            console.error('Erreur:', e);
+            document.getElementById('periodLabel').innerText = '⚠️ Erreur de connexion';
             break;
         }
     }
@@ -248,11 +268,7 @@ function euro(val) {
 }
 
 function chartOptions() {
-    return {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: { legend: { position: 'bottom' } }
-    };
+    return { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } } } };
 }
 
 function destroyCharts() {
@@ -269,18 +285,15 @@ function fillTable(selector, data, mapper) {
 function renderBranchKpis(invoices) {
     const container = document.getElementById('branchKpis');
     if (!invoices.length) { container.innerHTML = ''; return; }
-
     const branches = {};
     invoices.forEach(inv => {
         const b = inv.branchCode || 'Inconnu';
         if(!branches[b]) branches[b] = { ca:0, count:0, clients:new Set() };
         branches[b].ca += inv.totalInclTax || 0;
         branches[b].count++;
-        branches[b].clients.add(inv.customerData?.customerId);
+        if (inv.customerData?.customerId) branches[b].clients.add(inv.customerData.customerId);
     });
-
     const totalCA = invoices.reduce((s,i)=>s+(i.totalInclTax||0),0);
-
     container.innerHTML = '';
     Object.entries(branches).sort((a,b) => b[1].ca - a[1].ca).forEach(([name, data]) => {
         const div = document.createElement('div');
@@ -292,7 +305,6 @@ function renderBranchKpis(invoices) {
                 <div class="kpi-mini"><div class="kpi-title">Factures</div><div class="kpi-value">${data.count}</div></div>
                 <div class="kpi-mini"><div class="kpi-title">Clients</div><div class="kpi-value">${data.clients.size}</div></div>
                 <div class="kpi-mini"><div class="kpi-title">Panier moy.</div><div class="kpi-value">${euro(data.ca/data.count)}</div></div>
-                <div class="kpi-mini"><div class="kpi-title">Part CA</div><div class="kpi-value">${totalCA ? ((data.ca/totalCA)*100).toFixed(1) : 0}%</div></div>
             </div>
         `;
         container.appendChild(div);
@@ -301,34 +313,23 @@ function renderBranchKpis(invoices) {
 
 function render(invoices, label) {
     destroyCharts();
-
     let totalCA = 0;
     const customers = new Set();
-    const payments = {};
-    const groups = {};
-    const hourly = {};
-    const syscodes = {};
+    const payments = {}, groups = {}, hourly = {}, syscodes = {};
     Object.keys(SYSCODES).forEach(c => syscodes[c] = 0);
     const locations = {}, ventes = {}, services = {};
 
     invoices.forEach(invoice => {
         totalCA += invoice.totalInclTax || 0;
         if (invoice.customerData?.customerId) customers.add(invoice.customerData.customerId);
-
         const hour = new Date(invoice.createdAt).getHours();
         hourly[hour] = (hourly[hour] || 0) + (invoice.totalInclTax || 0);
-
         (invoice.payments || []).forEach(p => {
             payments[p.paymentTypeName] = (payments[p.paymentTypeName] || 0) + (p.amount || 0);
         });
-
         (invoice.items || []).forEach(item => {
             const code = item.baseSyscode || item.syscode;
-
-            if(syscodes[code] !== undefined) {
-                syscodes[code] += item.totalPrice || 0;
-            }
-
+            if(syscodes[code] !== undefined) syscodes[code] += item.totalPrice || 0;
             if(code === 'L') {
                 if(!locations[item.articleName]) locations[item.articleName] = { contrats:0, jours:0, ca:0 };
                 locations[item.articleName].contrats++;
@@ -358,83 +359,45 @@ function render(invoices, label) {
     document.getElementById('panierMoyen').innerText = invoices.length ? euro(totalCA/invoices.length) : '0 €';
     document.getElementById('periodLabel').innerText = label + ' — ' + invoices.length + ' factures';
 
-    // Graphique horaire
     const hours = Object.keys(hourly).sort((a,b) => a-b);
     charts.hourly = new Chart(document.getElementById('hourlyChart'), {
         type: 'line',
-        data: {
-            labels: hours.map(h => h + 'h'),
-            datasets: [{
-                label: 'CA (€)',
-                data: hours.map(h => hourly[h]),
-                borderColor: '#2563eb',
-                backgroundColor: 'rgba(37,99,235,0.1)',
-                fill: true,
-                tension: 0.3
-            }]
-        },
+        data: { labels: hours.map(h => h + 'h'), datasets: [{ label: 'CA (€)', data: hours.map(h => hourly[h]), borderColor: '#007aff', backgroundColor: 'rgba(0,122,255,0.1)', fill: true, tension: 0.4, pointRadius: 3 }] },
         options: chartOptions()
     });
 
-    // Paiements
     charts.payment = new Chart(document.getElementById('paymentChart'), {
         type: 'doughnut',
-        data: {
-            labels: Object.keys(payments),
-            datasets: [{
-                data: Object.values(payments),
-                backgroundColor: ['#2563eb','#10b981','#f59e0b','#8b5cf6','#ec4899','#14b8a6']
-            }]
-        },
+        data: { labels: Object.keys(payments), datasets: [{ data: Object.values(payments), backgroundColor: ['#007aff','#34c759','#ff9500','#af52de','#ff3b30','#5ac8fa'] }] },
         options: chartOptions()
     });
 
-    // Syscodes
     const activeSyscodes = Object.keys(SYSCODES).filter(c => syscodes[c] > 0);
     charts.syscode = new Chart(document.getElementById('syscodeChart'), {
         type: 'pie',
-        data: {
-            labels: activeSyscodes.map(c => SYSCODES[c].icon + ' ' + SYSCODES[c].label),
-            datasets: [{
-                data: activeSyscodes.map(c => syscodes[c]),
-                backgroundColor: activeSyscodes.map(c => SYSCODES[c].color)
-            }]
-        },
+        data: { labels: activeSyscodes.map(c => SYSCODES[c].icon + ' ' + SYSCODES[c].label), datasets: [{ data: activeSyscodes.map(c => syscodes[c]), backgroundColor: activeSyscodes.map(c => SYSCODES[c].color) }] },
         options: chartOptions()
     });
 
-    // Groupes location
     const groupEntries = Object.entries(groups).sort((a,b) => b[1]-a[1]).slice(0,10);
     charts.groups = new Chart(document.getElementById('rentalGroupChart'), {
         type: 'bar',
-        data: {
-            labels: groupEntries.map(g => g[0]),
-            datasets: [{
-                label: 'CA (€)',
-                data: groupEntries.map(g => g[1]),
-                backgroundColor: '#7c3aed'
-            }]
-        },
+        data: { labels: groupEntries.map(g => g[0]), datasets: [{ label: 'CA (€)', data: groupEntries.map(g => g[1]), backgroundColor: '#af52de', borderRadius: 8 }] },
         options: { ...chartOptions(), scales: { y: { beginAtZero: true } } }
     });
 
-    // Tables
-    fillTable('#locationTable',
-        Object.entries(locations).sort((a,b)=>b[1].ca-a[1].ca).slice(0,10),
+    fillTable('#locationTable', Object.entries(locations).sort((a,b)=>b[1].ca-a[1].ca).slice(0,10),
         ([n,r])=>`<tr><td>${n}</td><td>${r.contrats}</td><td>${r.jours}</td><td>${euro(r.ca)}</td></tr>`);
-    fillTable('#salesTable',
-        Object.entries(ventes).sort((a,b)=>b[1].ca-a[1].ca).slice(0,10),
+    fillTable('#salesTable', Object.entries(ventes).sort((a,b)=>b[1].ca-a[1].ca).slice(0,10),
         ([n,r])=>`<tr><td>${n}</td><td>${r.qty}</td><td>${euro(r.ca)}</td></tr>`);
-    fillTable('#serviceTable',
-        Object.entries(services).sort((a,b)=>b[1].ca-a[1].ca).slice(0,10),
+    fillTable('#serviceTable', Object.entries(services).sort((a,b)=>b[1].ca-a[1].ca).slice(0,10),
         ([n,r])=>`<tr><td>${n}</td><td>${r.nb}</td><td>${euro(r.ca)}</td></tr>`);
 }
 
 async function refresh() {
     const { start, label } = getDateBounds(currentRange);
     const createdAfter = start.toISOString().split('T')[0];
-
-    document.getElementById('periodLabel').innerText = 'Chargement des données...';
+    document.getElementById('periodLabel').innerText = 'Chargement...';
     allInvoices = await loadInvoices(createdAfter);
     const filtered = filterByDate(allInvoices, currentRange);
 
@@ -443,8 +406,7 @@ async function refresh() {
     select.innerHTML = '<option value="">🏪 Tous les magasins</option>';
     [...new Set(filtered.map(i => i.branchCode).filter(Boolean))].sort().forEach(b => {
         const opt = document.createElement('option');
-        opt.value = b;
-        opt.textContent = '🏪 ' + b;
+        opt.value = b; opt.textContent = '🏪 ' + b;
         select.appendChild(opt);
     });
     select.value = currentBranch;
@@ -462,7 +424,6 @@ async function start() {
         const v = select.value;
         render(v ? filtered.filter(i => i.branchCode === v) : filtered, label + (v ? ' — ' + v : ''));
     });
-
     document.querySelectorAll('.date-btn').forEach(btn => {
         btn.addEventListener('click', async () => {
             document.querySelectorAll('.date-btn').forEach(b => b.classList.remove('active'));
@@ -471,7 +432,6 @@ async function start() {
             await refresh();
         });
     });
-
     await refresh();
 }
 
