@@ -110,9 +110,9 @@ tr:last-child td{border-bottom:none;}
 .kpi-mini .kpi-value{font-size:16px;}
 .error-msg{
     background:#ffebee;color:#c62828;padding:16px;border-radius:12px;
-    margin:16px 0;font-size:14px;text-align:center;
+    margin:16px 0;font-size:14px;text-align:center;grid-column:span 12;
 }
-.loading{text-align:center;padding:40px;color:var(--muted);}
+.loading{text-align:center;padding:40px;color:var(--muted);grid-column:span 12;}
 </style>
 </head>
 <body>
@@ -138,28 +138,30 @@ tr:last-child td{border-bottom:none;}
 <div class="branch-kpis" id="branchKpis"></div>
 
 <div class="dashboard" id="dashboard">
-    <div class="kpi" style="grid-column:span 3;">
+    <div class="loading" id="loadingMsg">⏳ Chargement des données...</div>
+
+    <div class="kpi" style="grid-column:span 3;display:none;">
         <div class="kpi-icon" style="background:rgba(0,122,255,0.1);">💰</div>
         <div>
             <div class="kpi-title">CA Total</div>
             <div class="kpi-value" id="caTotal">-</div>
         </div>
     </div>
-    <div class="kpi" style="grid-column:span 3;">
+    <div class="kpi" style="grid-column:span 3;display:none;">
         <div class="kpi-icon" style="background:rgba(255,45,85,0.1);">🧾</div>
         <div>
             <div class="kpi-title">Factures</div>
             <div class="kpi-value" id="nbFactures">-</div>
         </div>
     </div>
-    <div class="kpi" style="grid-column:span 3;">
+    <div class="kpi" style="grid-column:span 3;display:none;">
         <div class="kpi-icon" style="background:rgba(255,149,0,0.1);">👥</div>
         <div>
             <div class="kpi-title">Clients</div>
             <div class="kpi-value" id="nbClients">-</div>
         </div>
     </div>
-    <div class="kpi" style="grid-column:span 3;">
+    <div class="kpi" style="grid-column:span 3;display:none;">
         <div class="kpi-icon" style="background:rgba(52,199,89,0.1);">🛒</div>
         <div>
             <div class="kpi-title">Panier Moyen</div>
@@ -167,27 +169,27 @@ tr:last-child td{border-bottom:none;}
         </div>
     </div>
 
-    <div class="panel panel-full">
+    <div class="panel panel-full" style="display:none;">
         <h2>📈 CA horaire</h2>
         <canvas id="hourlyChart"></canvas>
     </div>
 
-    <div class="panel panel-half">
+    <div class="panel panel-half" style="display:none;">
         <h2>💳 Paiements</h2>
         <canvas id="paymentChart"></canvas>
     </div>
 
-    <div class="panel panel-half">
+    <div class="panel panel-half" style="display:none;">
         <h2>🏷️ Activités</h2>
         <canvas id="syscodeChart"></canvas>
     </div>
 
-    <div class="panel panel-full">
+    <div class="panel panel-full" style="display:none;">
         <h2>🎿 Groupes de location</h2>
         <canvas id="rentalGroupChart"></canvas>
     </div>
 
-    <div class="panel panel-third">
+    <div class="panel panel-third" style="display:none;">
         <h2><span class="badge location">LOCATION</span>Top Locations</h2>
         <div class="table-wrapper">
         <table id="locationTable">
@@ -197,7 +199,7 @@ tr:last-child td{border-bottom:none;}
         </div>
     </div>
 
-    <div class="panel panel-third">
+    <div class="panel panel-third" style="display:none;">
         <h2><span class="badge" style="background:rgba(52,199,89,0.1);color:var(--green);">VENTE</span>Top Ventes</h2>
         <div class="table-wrapper">
         <table id="salesTable">
@@ -207,7 +209,7 @@ tr:last-child td{border-bottom:none;}
         </div>
     </div>
 
-    <div class="panel panel-third">
+    <div class="panel panel-third" style="display:none;">
         <h2><span class="badge" style="background:rgba(255,149,0,0.1);color:var(--orange);">SERVICE</span>Top Services</h2>
         <div class="table-wrapper">
         <table id="serviceTable">
@@ -228,20 +230,36 @@ const SYSCODES = {
     S: { label: 'Service',  color: '#ff9500', icon: '🔧' }
 };
 
-// URL de base de l'API (sans proxy)
+// URL de base de l'API interne
 const API_BASE = 'https://80.13.18.153:11133/easyrest/rest/easyrest/invoices?accessId=bweb123!&top=500';
 
-// Proxy CORS - essaie ces options si l'une ne marche pas :
+// ============================================
+// 🔧 PROXIES CORS - Teste plusieurs automatiquement
+// Si aucun ne marche (certificat SSL auto-signé), crée un Cloudflare Worker gratuit:
+// https://dash.cloudflare.com -> Workers -> Create -> colle ce code:
+// ---
+// export default {
+//   async fetch(request) {
+//     const url = new URL(request.url).searchParams.get('url');
+//     const response = await fetch(url);
+//     const newResponse = new Response(response.body, response);
+//     newResponse.headers.set('Access-Control-Allow-Origin', '*');
+//     return newResponse;
+//   }
+// }
+// Puis remplace CORS_PROXIES par: ['https://ton-worker.workers.dev/?url=']
+// ============================================
 const CORS_PROXIES = [
-    'https://api.allorigins.win/raw?url=',
-    'https://corsproxy.io/?',
-    'https://api.codetabs.com/v1/proxy?quest='
+    { url: 'https://api.allorigins.win/get?url=', parse: 'json_contents' }, // retourne {contents: "..."}
+    { url: 'https://api.codetabs.com/v1/proxy?quest=', parse: 'raw' },
+    { url: 'https://corsproxy.org/?', parse: 'raw' },
+    { url: 'https://api.cors.lol/?url=', parse: 'raw' },
+    { url: 'https://cors.eu.org/', parse: 'raw' }
 ];
 
 let allInvoices = [];
 let currentRange = 'today';
 let charts = {};
-let currentProxyIndex = 0;
 
 function getDateBounds(range) {
     const now = new Date();
@@ -283,15 +301,14 @@ function filterByDate(invoices, range) {
     });
 }
 
-async function fetchWithProxy(url) {
-    // Essaie chaque proxy jusqu'à ce qu'un fonctionne
-    for (let i = 0; i < CORS_PROXIES.length; i++) {
-        const proxyIndex = (currentProxyIndex + i) % CORS_PROXIES.length;
-        const proxy = CORS_PROXIES[proxyIndex];
-        const fullUrl = proxy + encodeURIComponent(url);
+async function fetchWithProxy(apiUrl) {
+    let lastError = null;
 
+    for (const proxy of CORS_PROXIES) {
         try {
-            console.log('Tentative avec proxy:', proxy);
+            console.log('Tentative avec proxy:', proxy.url);
+            const fullUrl = proxy.url + encodeURIComponent(apiUrl);
+
             const response = await fetch(fullUrl, {
                 method: 'GET',
                 headers: { 'Accept': 'application/json' }
@@ -300,15 +317,27 @@ async function fetchWithProxy(url) {
             if (!response.ok) throw new Error('HTTP ' + response.status);
 
             const text = await response.text();
-            // Certains proxies retournent du texte, d'autres du JSON
-            const data = JSON.parse(text);
-            currentProxyIndex = proxyIndex; // Mémorise le proxy qui marche
+            let data;
+
+            if (proxy.parse === 'json_contents') {
+                // allorigins /get retourne {contents: "json string"}
+                const wrapper = JSON.parse(text);
+                data = JSON.parse(wrapper.contents);
+            } else {
+                data = JSON.parse(text);
+            }
+
+            console.log('Succès avec proxy:', proxy.url);
             return data;
+
         } catch (e) {
-            console.warn('Proxy échoué:', proxy, e.message);
-            if (i === CORS_PROXIES.length - 1) throw e; // Dernier essai
+            console.warn('Proxy échoué:', proxy.url, e.message);
+            lastError = e;
         }
     }
+
+    throw new Error('Tous les proxies ont échoué. Dernière erreur: ' + (lastError?.message || 'inconnue') +
+        '. Solution: crée un Cloudflare Worker gratuit (voir commentaires dans le code).');
 }
 
 async function loadInvoices(createdAfter) {
@@ -358,10 +387,17 @@ function fillTable(selector, data, mapper) {
     if (!tbody) return;
     tbody.innerHTML = '';
     if (data.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--muted);">Aucune donnée</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--muted);padding:20px;">Aucune donnée</td></tr>';
         return;
     }
     data.forEach(row => { tbody.innerHTML += mapper(row); });
+}
+
+function showContent() {
+    document.getElementById('loadingMsg')?.remove();
+    document.querySelectorAll('.dashboard > *:not(.error-msg)').forEach(el => {
+        if (el.id !== 'loadingMsg') el.style.display = '';
+    });
 }
 
 function renderBranchKpis(invoices) {
@@ -399,6 +435,7 @@ function renderBranchKpis(invoices) {
 
 function render(invoices, label) {
     destroyCharts();
+    showContent();
 
     let totalCA = 0;
     const customers = new Set();
@@ -450,17 +487,15 @@ function render(invoices, label) {
         });
     });
 
-    // Mise à jour des KPIs
     document.getElementById('caTotal').innerText = euro(totalCA);
     document.getElementById('nbFactures').innerText = invoices.length;
     document.getElementById('nbClients').innerText = customers.size;
     document.getElementById('panierMoyen').innerText = invoices.length ? euro(totalCA/invoices.length) : '0 €';
     document.getElementById('periodLabel').innerText = label + ' — ' + invoices.length + ' factures';
 
-    // Graphique horaire
     const hours = Object.keys(hourly).sort((a,b) => a-b);
     const hourlyCtx = document.getElementById('hourlyChart');
-    if (hourlyCtx) {
+    if (hourlyCtx && hours.length > 0) {
         charts.hourly = new Chart(hourlyCtx, {
             type: 'line',
             data: {
@@ -480,7 +515,6 @@ function render(invoices, label) {
         });
     }
 
-    // Graphique paiements
     const paymentCtx = document.getElementById('paymentChart');
     if (paymentCtx && Object.keys(payments).length > 0) {
         charts.payment = new Chart(paymentCtx, {
@@ -496,7 +530,6 @@ function render(invoices, label) {
         });
     }
 
-    // Graphique syscodes
     const activeSyscodes = Object.keys(SYSCODES).filter(c => syscodes[c] > 0);
     const syscodeCtx = document.getElementById('syscodeChart');
     if (syscodeCtx && activeSyscodes.length > 0) {
@@ -513,7 +546,6 @@ function render(invoices, label) {
         });
     }
 
-    // Graphique groupes
     const groupEntries = Object.entries(groups).sort((a,b) => b[1]-a[1]).slice(0,10);
     const groupCtx = document.getElementById('rentalGroupChart');
     if (groupCtx && groupEntries.length > 0) {
@@ -532,7 +564,6 @@ function render(invoices, label) {
         });
     }
 
-    // Tables
     fillTable('#locationTable tbody',
         Object.entries(locations).sort((a,b)=>b[1].ca-a[1].ca).slice(0,10),
         ([n,r])=>`<tr><td>${n}</td><td>${r.contrats}</td><td>${r.jours}</td><td>${euro(r.ca)}</td></tr>`);
@@ -548,8 +579,11 @@ function showError(message) {
     const dashboard = document.getElementById('dashboard');
     const errorDiv = document.createElement('div');
     errorDiv.className = 'error-msg';
-    errorDiv.innerHTML = `⚠️ ${message}<br><small>Vérifiez que l'API est accessible et que le proxy CORS fonctionne.</small>`;
+    errorDiv.innerHTML = `⚠️ <strong>Erreur de connexion</strong><br>${message}<br><br>
+        <small>💡 <strong>Solution recommandée :</strong> Crée un Cloudflare Worker gratuit (5 min) pour faire le proxy.<br>
+        Va sur <a href="https://dash.cloudflare.com" target="_blank">dash.cloudflare.com</a> → Workers → Create service → colle le code dans les commentaires du fichier HTML.</small>`;
     dashboard.prepend(errorDiv);
+    document.getElementById('loadingMsg')?.remove();
 }
 
 async function refresh() {
@@ -580,7 +614,7 @@ async function refresh() {
     } catch (error) {
         console.error('Erreur:', error);
         document.getElementById('periodLabel').innerText = 'Erreur de chargement';
-        showError('Impossible de charger les données. ' + error.message);
+        showError(error.message);
     }
 }
 
