@@ -160,7 +160,7 @@ const SYSCODES = {
     // Ajoute ici : G: { label: 'Garantie', color: '#8b5cf6', icon: '🛡️' }
 };
 
-const BASE_URL = 'https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent('https://unlusty-hudson-leadless.ngrok-free.dev/easyrest/rest/easyrest/invoices?accessId=bweb123!&top=500');
+const BASE_URL = 'https://api.allorigins.win/raw?url=' + encodeURIComponent('https://unlusty-hudson-leadless.ngrok-free.dev/easyrest/rest/easyrest/invoices?accessId=bweb123!&top=500');
 
 let allInvoices = [];
 let currentRange = 'today';
@@ -214,6 +214,13 @@ async function loadInvoices(createdAfter) {
     while(true) {
         const response = await fetch(url + skip);
         const batch = await response.json();
+
+        // Vérifie que c'est bien un tableau avant le spread
+        if (!Array.isArray(batch)) {
+            console.error('Réponse non valide:', batch);
+            break;
+        }
+
         invoices.push(...batch);
         if(batch.length < 500) break;
         skip += 500;
