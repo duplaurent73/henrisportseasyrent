@@ -52,6 +52,8 @@ tr:last-child td{border-bottom:none;}
 .kpi-mini{background:#f8fafc;border-radius:12px;padding:12px;}
 .kpi-mini .kpi-title{font-size:11px;}
 .kpi-mini .kpi-value{font-size:20px;}
+.loading{text-align:center;padding:40px;color:var(--muted);}
+.error{background:#fee2e2;color:#991b1b;padding:15px;border-radius:12px;margin:20px 0;}
 </style>
 </head>
 <body>
@@ -151,16 +153,19 @@ tr:last-child td{border-bottom:none;}
 
 <script>
 // ============================================
-// ⚙️ CONFIGURATION DES BASE SYSCODES — Modifie ici !
+// ⚙️ CONFIGURATION
 // ============================================
 const SYSCODES = {
     L: { label: 'Location', color: '#2563eb', icon: '🎿' },
     M: { label: 'Vente',    color: '#10b981', icon: '🛒' },
     S: { label: 'Service',  color: '#f59e0b', icon: '🔧' }
-    // Ajoute ici : G: { label: 'Garantie', color: '#8b5cf6', icon: '🛡️' }
 };
 
-const BASE_URL ='https://80.13.18.153:11133/easyrest/rest/easyrest/invoices?accessId=bweb123!&top=500';
+// 🔧 URL de ton API EasyRent (sans proxy)
+const API_BASE = 'https://80.13.18.153:11133/easyrest/rest/easyrest/invoices?accessId=bweb123!&top=500';
+
+// 🌐 Proxy CORS fiable pour GitHub Pages
+const PROXY = 'https://api.allorigins.win/raw?url=';
 
 let allInvoices = [];
 let currentRange = 'today';
@@ -209,21 +214,31 @@ function filterByDate(invoices, range) {
 async function loadInvoices(createdAfter) {
     let invoices = [];
     let skip = 0;
-    const url = BASE_URL + '&createdAfter=' + createdAfter + '&skip=';
 
     while(true) {
-        const response = await fetch(url + skip);
-        const batch = await response.json();
+        // Construction de l'URL complète puis encodage pour le proxy
+        const fullUrl = API_BASE + '&createdAfter=' + createdAfter + '&skip=' + skip;
+        const proxyUrl = PROXY + encodeURIComponent(fullUrl);
 
-        // Vérifie que c'est bien un tableau avant le spread
-        if (!Array.isArray(batch)) {
-            console.error('Réponse non valide:', batch);
+        try {
+            const response = await fetch(proxyUrl);
+            if (!response.ok) throw new Error('HTTP ' + response.status);
+            const batch = await response.json();
+
+            if (!Array.isArray(batch)) {
+                console.error('Réponse non valide:', batch);
+                break;
+            }
+
+            invoices.push(...batch);
+            if(batch.length < 500) break;
+            skip += 500;
+        } catch(e) {
+            console.error('Erreur chargement:', e);
+            document.getElementById('periodLabel').innerHTML =
+                '<span class="error">⚠️ Erreur de connexion à l\'API. Vérifie que le serveur est accessible.</span>';
             break;
         }
-
-        invoices.push(...batch);
-        if(batch.length < 500) break;
-        skip += 500;
     }
     return invoices;
 }
@@ -246,21 +261,25 @@ function destroyCharts() {
 }
 
 function fillTable(selector, data, mapper) {
-    const tbody = document.querySelector(selector);
+    const tbody = document.querySelector(selector + ' tbody');
     tbody.innerHTML = '';
     data.forEach(row => { tbody.innerHTML += mapper(row); });
 }
 
 function renderBranchKpis(invoices) {
     const container = document.getElementById('branchKpis');
+    if (!invoices.length) { container.innerHTML = ''; return; }
+
     const branches = {};
     invoices.forEach(inv => {
         const b = inv.branchCode || 'Inconnu';
         if(!branches[b]) branches[b] = { ca:0, count:0, clients:new Set() };
-        branches[b].ca += inv.totalInclTax;
+        branches[b].ca += inv.totalInclTax || 0;
         branches[b].count++;
-        branches[b].clients.add(inv.customerData.customerId);
+        branches[b].clients.add(inv.customerData?.customerId);
     });
+
+    const totalCA = invoices.reduce((s,i)=>s+(i.totalInclTax||0),0);
 
     container.innerHTML = '';
     Object.entries(branches).sort((a,b) => b[1].ca - a[1].ca).forEach(([name, data]) => {
@@ -273,7 +292,7 @@ function renderBranchKpis(invoices) {
                 <div class="kpi-mini"><div class="kpi-title">Factures</div><div class="kpi-value">${data.count}</div></div>
                 <div class="kpi-mini"><div class="kpi-title">Clients</div><div class="kpi-value">${data.clients.size}</div></div>
                 <div class="kpi-mini"><div class="kpi-title">Panier moy.</div><div class="kpi-value">${euro(data.ca/data.count)}</div></div>
-                <div class="kpi-mini"><div class="kpi-title">Part CA</div><div class="kpi-value">${((data.ca/invoices.reduce((s,i)=>s+i.totalInclTax,0))*100).toFixed(1)}%</div></div>
+                <div class="kpi-mini"><div class="kpi-title">Part CA</div><div class="kpi-value">${totalCA ? ((data.ca/totalCA)*100).toFixed(1) : 0}%</div></div>
             </div>
         `;
         container.appendChild(div);
@@ -291,48 +310,44 @@ function render(invoices, label) {
     const syscodes = {};
     Object.keys(SYSCODES).forEach(c => syscodes[c] = 0);
     const locations = {}, ventes = {}, services = {};
-    let totalDuration = 0, totalContracts = 0;
 
     invoices.forEach(invoice => {
-        totalCA += invoice.totalInclTax;
-        customers.add(invoice.customerData.customerId);
+        totalCA += invoice.totalInclTax || 0;
+        if (invoice.customerData?.customerId) customers.add(invoice.customerData.customerId);
 
         const hour = new Date(invoice.createdAt).getHours();
-        hourly[hour] = (hourly[hour] || 0) + invoice.totalInclTax;
+        hourly[hour] = (hourly[hour] || 0) + (invoice.totalInclTax || 0);
 
-        invoice.payments.forEach(p => {
-            payments[p.paymentTypeName] = (payments[p.paymentTypeName] || 0) + p.amount;
+        (invoice.payments || []).forEach(p => {
+            payments[p.paymentTypeName] = (payments[p.paymentTypeName] || 0) + (p.amount || 0);
         });
 
-        invoice.items.forEach(item => {
-            // 🔑 UTILISATION DE baseSyscode AU LIEU DE syscode
+        (invoice.items || []).forEach(item => {
             const code = item.baseSyscode || item.syscode;
 
             if(syscodes[code] !== undefined) {
-                syscodes[code] += item.totalPrice;
+                syscodes[code] += item.totalPrice || 0;
             }
 
             if(code === 'L') {
                 if(!locations[item.articleName]) locations[item.articleName] = { contrats:0, jours:0, ca:0 };
                 locations[item.articleName].contrats++;
-                locations[item.articleName].jours += item.quantity;
-                locations[item.articleName].ca += item.totalPrice;
-                totalContracts++;
-                if(item.rentalData) {
-                    totalDuration += item.rentalData.duration;
+                locations[item.articleName].jours += item.quantity || 0;
+                locations[item.articleName].ca += item.totalPrice || 0;
+                if(item.rentalData?.rentalGroupName) {
                     const g = item.rentalData.rentalGroupName;
-                    groups[g] = (groups[g] || 0) + item.totalPrice;
+                    groups[g] = (groups[g] || 0) + (item.totalPrice || 0);
                 }
             }
             if(code === 'M') {
                 if(!ventes[item.articleName]) ventes[item.articleName] = { qty:0, ca:0 };
-                ventes[item.articleName].qty += item.quantity;
-                ventes[item.articleName].ca += item.totalPrice;
+                ventes[item.articleName].qty += item.quantity || 0;
+                ventes[item.articleName].ca += item.totalPrice || 0;
             }
             if(code === 'S') {
                 if(!services[item.articleName]) services[item.articleName] = { nb:0, ca:0 };
                 services[item.articleName].nb++;
-                services[item.articleName].ca += item.totalPrice;
+                services[item.articleName].ca += item.totalPrice || 0;
             }
         });
     });
@@ -343,6 +358,7 @@ function render(invoices, label) {
     document.getElementById('panierMoyen').innerText = invoices.length ? euro(totalCA/invoices.length) : '0 €';
     document.getElementById('periodLabel').innerText = label + ' — ' + invoices.length + ' factures';
 
+    // Graphique horaire
     const hours = Object.keys(hourly).sort((a,b) => a-b);
     charts.hourly = new Chart(document.getElementById('hourlyChart'), {
         type: 'line',
@@ -360,6 +376,7 @@ function render(invoices, label) {
         options: chartOptions()
     });
 
+    // Paiements
     charts.payment = new Chart(document.getElementById('paymentChart'), {
         type: 'doughnut',
         data: {
@@ -372,6 +389,7 @@ function render(invoices, label) {
         options: chartOptions()
     });
 
+    // Syscodes
     const activeSyscodes = Object.keys(SYSCODES).filter(c => syscodes[c] > 0);
     charts.syscode = new Chart(document.getElementById('syscodeChart'), {
         type: 'pie',
@@ -385,6 +403,7 @@ function render(invoices, label) {
         options: chartOptions()
     });
 
+    // Groupes location
     const groupEntries = Object.entries(groups).sort((a,b) => b[1]-a[1]).slice(0,10);
     charts.groups = new Chart(document.getElementById('rentalGroupChart'), {
         type: 'bar',
@@ -399,13 +418,14 @@ function render(invoices, label) {
         options: { ...chartOptions(), scales: { y: { beginAtZero: true } } }
     });
 
-    fillTable('#locationTable tbody',
+    // Tables
+    fillTable('#locationTable',
         Object.entries(locations).sort((a,b)=>b[1].ca-a[1].ca).slice(0,10),
         ([n,r])=>`<tr><td>${n}</td><td>${r.contrats}</td><td>${r.jours}</td><td>${euro(r.ca)}</td></tr>`);
-    fillTable('#salesTable tbody',
+    fillTable('#salesTable',
         Object.entries(ventes).sort((a,b)=>b[1].ca-a[1].ca).slice(0,10),
         ([n,r])=>`<tr><td>${n}</td><td>${r.qty}</td><td>${euro(r.ca)}</td></tr>`);
-    fillTable('#serviceTable tbody',
+    fillTable('#serviceTable',
         Object.entries(services).sort((a,b)=>b[1].ca-a[1].ca).slice(0,10),
         ([n,r])=>`<tr><td>${n}</td><td>${r.nb}</td><td>${euro(r.ca)}</td></tr>`);
 }
@@ -414,13 +434,14 @@ async function refresh() {
     const { start, label } = getDateBounds(currentRange);
     const createdAfter = start.toISOString().split('T')[0];
 
+    document.getElementById('periodLabel').innerText = 'Chargement des données...';
     allInvoices = await loadInvoices(createdAfter);
     const filtered = filterByDate(allInvoices, currentRange);
 
     const select = document.getElementById('branchFilter');
     const currentBranch = select.value;
     select.innerHTML = '<option value="">🏪 Tous les magasins</option>';
-    [...new Set(filtered.map(i => i.branchCode))].sort().forEach(b => {
+    [...new Set(filtered.map(i => i.branchCode).filter(Boolean))].sort().forEach(b => {
         const opt = document.createElement('option');
         opt.value = b;
         opt.textContent = '🏪 ' + b;
