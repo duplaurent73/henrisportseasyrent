@@ -7,202 +7,386 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
 :root{
-    --bg:#f2f2f7; --panel:#ffffff; --text:#000000; --muted:#8e8e93;
-    --blue:#007aff; --green:#34c759; --orange:#ff9500; --purple:#af52de;
+    --bg:#f2f2f7;
+    --panel:#ffffff;
+    --text:#000000;
+    --muted:#8e8e93;
+    --blue:#007aff;
+    --green:#34c759;
+    --orange:#ff9500;
+    --purple:#af52de;
+    --red:#ff3b30;
     --radius:20px;
-    --shadow:0 2px 12px rgba(0,0,0,.06);
+    --shadow:0 2px 12px rgba(0,0,0,0.04), 0 8px 32px rgba(0,0,0,0.06);
+    --safe-top:env(safe-area-inset-top, 0px);
+    --safe-bottom:env(safe-area-inset-bottom, 0px);
 }
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html{-webkit-text-size-adjust:100%;}
 body{
-    background:var(--bg);color:var(--text);
-    font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Segoe UI',Roboto,sans-serif;
-    padding:16px 14px 40px;
-    -webkit-font-smoothing:antialiased;
+    background:var(--bg);
+    color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+    padding:calc(16px + var(--safe-top)) 16px calc(24px + var(--safe-bottom));
+    min-height:100vh;
 }
-h1{font-size:28px;font-weight:700;margin-bottom:4px;letter-spacing:-.5px;}
-.subtitle{color:var(--muted);margin-bottom:18px;font-size:14px;font-weight:500;}
 
-.header-bar{margin-bottom:12px;}
+/* Header sticky iOS style */
+.sticky-header{
+    position:sticky;
+    top:calc(-1px + var(--safe-top));
+    z-index:100;
+    background:rgba(242,242,247,0.8);
+    backdrop-filter:saturate(180%) blur(20px);
+    -webkit-backdrop-filter:saturate(180%) blur(20px);
+    margin:-16px -16px 16px;
+    padding:calc(12px + var(--safe-top)) 16px 12px;
+    border-bottom:0.5px solid rgba(0,0,0,0.1);
+}
+h1{
+    font-size:28px;
+    font-weight:700;
+    letter-spacing:-0.5px;
+    margin-bottom:4px;
+}
+.subtitle{
+    color:var(--muted);
+    font-size:13px;
+    font-weight:500;
+}
+
+/* Segmented Control iOS */
+.segmented-control{
+    display:flex;
+    background:rgba(118,118,128,0.12);
+    border-radius:12px;
+    padding:2px;
+    margin:12px 0;
+    gap:2px;
+}
+.segmented-control button{
+    flex:1;
+    border:none;
+    background:transparent;
+    padding:8px 4px;
+    font-size:13px;
+    font-weight:500;
+    color:var(--text);
+    border-radius:10px;
+    cursor:pointer;
+    transition:all 0.2s cubic-bezier(0.4,0,0.2,1);
+    white-space:nowrap;
+}
+.segmented-control button.active{
+    background:#ffffff;
+    box-shadow:0 1px 4px rgba(0,0,0,0.1), 0 2px 8px rgba(0,0,0,0.08);
+    font-weight:600;
+}
+
+/* Select iOS style */
+.select-wrapper{
+    position:relative;
+    margin-bottom:8px;
+}
 #branchFilter{
-    width:100%;padding:12px 16px;font-size:16px;font-weight:500;
-    border:none;border-radius:14px;background:var(--panel);
-    box-shadow:var(--shadow);cursor:pointer;appearance:none;
-    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%238e8e93' stroke-width='2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
-    background-repeat:no-repeat;background-position:right 16px center;
+    width:100%;
+    appearance:none;
+    -webkit-appearance:none;
+    padding:12px 40px 12px 16px;
+    font-size:15px;
+    font-weight:500;
+    border:none;
+    border-radius:14px;
+    background:#ffffff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%238e8e93' stroke-width='2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat right 16px center;
+    box-shadow:var(--shadow);
+    cursor:pointer;
+    color:var(--text);
 }
+#branchFilter:focus{outline:2px solid var(--blue);outline-offset:2px;}
 
-.date-bar{display:flex;gap:8px;margin-bottom:20px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none;}
-.date-bar::-webkit-scrollbar{display:none;}
-.date-btn{
-    flex-shrink:0;padding:8px 16px;font-size:14px;font-weight:600;
-    border:none;border-radius:999px;background:var(--panel);color:var(--text);
-    box-shadow:var(--shadow);cursor:pointer;transition:all .2s;
+/* KPI Cards iOS */
+.kpi-grid{
+    display:grid;
+    grid-template-columns:repeat(2,1fr);
+    gap:12px;
+    margin-bottom:16px;
 }
-.date-btn.active{background:var(--blue);color:white;}
-
-.branch-kpis{margin-bottom:20px;}
-.branch-kpi-block{
-    background:var(--panel);border-radius:var(--radius);padding:16px;
-    margin-bottom:12px;box-shadow:var(--shadow);
-}
-.branch-kpi-block h3{margin-bottom:12px;font-size:16px;color:var(--blue);font-weight:700;}
-.branch-kpi-row{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;}
-.kpi-mini{background:#f2f2f7;border-radius:14px;padding:12px;}
-.kpi-mini .kpi-title{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.3px;}
-.kpi-mini .kpi-value{font-size:18px;font-weight:700;margin-top:2px;}
-
-.dashboard{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;}
 .kpi{
-    background:var(--panel);border-radius:var(--radius);padding:16px;
-    display:flex;flex-direction:column;gap:8px;box-shadow:var(--shadow);
+    background:var(--panel);
+    border-radius:var(--radius);
+    padding:16px;
+    box-shadow:var(--shadow);
+    display:flex;
+    flex-direction:column;
+    gap:8px;
 }
-.kpi-icon{width:44px;height:44px;border-radius:12px;display:flex;justify-content:center;align-items:center;font-size:20px;}
-.kpi-title{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;font-weight:600;}
-.kpi-value{font-size:22px;font-weight:700;letter-spacing:-.3px;}
+.kpi-icon{
+    width:40px;
+    height:40px;
+    border-radius:12px;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    font-size:20px;
+}
+.kpi-title{
+    font-size:11px;
+    color:var(--muted);
+    text-transform:uppercase;
+    letter-spacing:0.5px;
+    font-weight:600;
+}
+.kpi-value{
+    font-size:22px;
+    font-weight:700;
+    letter-spacing:-0.5px;
+}
 
+/* Branch KPIs */
+.branch-kpis{margin-bottom:16px;}
+.branch-kpi-block{
+    background:var(--panel);
+    border-radius:var(--radius);
+    padding:16px;
+    margin-bottom:12px;
+    box-shadow:var(--shadow);
+}
+.branch-kpi-block h3{
+    margin-bottom:12px;
+    font-size:15px;
+    color:var(--blue);
+    font-weight:600;
+    display:flex;
+    align-items:center;
+    gap:6px;
+}
+.branch-kpi-row{
+    display:grid;
+    grid-template-columns:repeat(2,1fr);
+    gap:10px;
+}
+.kpi-mini{
+    background:#f2f2f7;
+    border-radius:14px;
+    padding:12px;
+}
+.kpi-mini .kpi-title{font-size:10px;}
+.kpi-mini .kpi-value{font-size:16px;}
+
+/* Panels */
+.dashboard{
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+}
 .panel{
-    background:var(--panel);border-radius:var(--radius);padding:16px;
-    box-shadow:var(--shadow);grid-column:span 2;overflow:hidden;
+    background:var(--panel);
+    border-radius:var(--radius);
+    padding:16px;
+    box-shadow:var(--shadow);
 }
-.panel h2{font-size:16px;margin-bottom:12px;font-weight:700;letter-spacing:-.2px;}
-canvas{max-height:220px;}
+.panel h2{
+    font-size:17px;
+    margin-bottom:12px;
+    font-weight:600;
+    letter-spacing:-0.3px;
+    display:flex;
+    align-items:center;
+    gap:8px;
+}
+canvas{max-height:280px;}
 
-.table-wrapper{overflow-x:auto;-webkit-overflow-scrolling:touch;}
-table{width:100%;border-collapse:collapse;font-size:13px;min-width:280px;}
-th{text-align:left;padding:8px 6px;color:var(--muted);font-size:11px;text-transform:uppercase;font-weight:600;border-bottom:1px solid #e5e5ea;}
-td{padding:10px 6px;border-bottom:1px solid #f2f2f7;font-weight:500;}
+/* Tables iOS style */
+.table-container{
+    overflow-x:auto;
+    -webkit-overflow-scrolling:touch;
+    border-radius:12px;
+}
+table{
+    width:100%;
+    border-collapse:separate;
+    border-spacing:0;
+    font-size:13px;
+    min-width:280px;
+}
+th{
+    text-align:left;
+    padding:10px 12px;
+    color:var(--muted);
+    font-size:11px;
+    text-transform:uppercase;
+    font-weight:600;
+    letter-spacing:0.5px;
+    background:#f2f2f7;
+    position:sticky;
+    top:0;
+}
+th:first-child{border-radius:12px 0 0 0;}
+th:last-child{border-radius:0 12px 0 0;}
+td{
+    padding:12px;
+    border-bottom:0.5px solid rgba(0,0,0,0.06);
+    font-weight:500;
+}
 tr:last-child td{border-bottom:none;}
-.badge{display:inline-block;padding:3px 8px;border-radius:8px;font-size:10px;font-weight:700;margin-right:6px;text-transform:uppercase;}
-.badge.location{background:#e5f0ff;color:var(--blue);}
+tr:last-child td:first-child{border-radius:0 0 0 12px;}
+tr:last-child td:last-child{border-radius:0 0 12px 0;}
 
+/* Badges iOS */
+.badge{
+    display:inline-flex;
+    align-items:center;
+    padding:4px 10px;
+    border-radius:20px;
+    font-size:11px;
+    font-weight:600;
+    letter-spacing:0.3px;
+}
+.badge.location{background:rgba(0,122,255,0.12);color:var(--blue);}
+.badge.sale{background:rgba(52,199,89,0.12);color:var(--green);}
+.badge.service{background:rgba(255,149,0,0.12);color:var(--orange);}
+
+/* Desktop enhancements */
 @media(min-width:768px){
-    body{padding:24px 32px 60px;}
+    body{padding:32px;max-width:1400px;margin:0 auto;}
+    .sticky-header{margin:-32px -32px 24px;padding:20px 32px 16px;border-radius:0;}
     h1{font-size:34px;}
-    .header-bar{display:flex;gap:12px;}
-    #branchFilter{width:auto;min-width:220px;}
-    .date-bar{margin-bottom:24px;}
-    .branch-kpi-row{grid-template-columns:repeat(5,1fr);}
-    .dashboard{grid-template-columns:repeat(12,1fr);gap:20px;}
-    .kpi{grid-column:span 3;flex-direction:row;align-items:center;gap:14px;padding:20px;}
-    .kpi-icon{width:52px;height:52px;font-size:24px;}
+    .kpi-grid{grid-template-columns:repeat(4,1fr);gap:16px;}
+    .kpi{flex-direction:row;align-items:center;gap:16px;padding:20px;}
+    .kpi-icon{width:52px;height:52px;font-size:24px;border-radius:16px;}
     .kpi-value{font-size:26px;}
-    .panel{grid-column:span 12;padding:20px;}
+    .branch-kpi-row{grid-template-columns:repeat(5,1fr);}
+    .dashboard{
+        display:grid;
+        grid-template-columns:repeat(12,1fr);
+        gap:20px;
+    }
+    .panel-full{grid-column:span 12;}
     .panel-half{grid-column:span 6;}
     .panel-third{grid-column:span 4;}
-    canvas{max-height:300px;}
+    canvas{max-height:320px;}
+}
+@media(min-width:1200px){
+    .segmented-control{max-width:400px;}
 }
 </style>
 </head>
 <body>
 
-<h1>🏔️ EasyRent</h1>
-<div class="subtitle" id="periodLabel">Chargement...</div>
+<div class="sticky-header">
+    <h1>🏔️ EasyRent</h1>
+    <div class="subtitle" id="periodLabel">Chargement...</div>
 
-<div class="header-bar">
-    <select id="branchFilter">
-        <option value="">🏪 Tous les magasins</option>
-    </select>
-</div>
+    <div class="segmented-control" id="dateBar">
+        <button class="active" data-range="today">Auj.</button>
+        <button data-range="yesterday">Hier</button>
+        <button data-range="week">Semaine</button>
+        <button data-range="month">Mois</button>
+    </div>
 
-<div class="date-bar">
-    <button class="date-btn active" data-range="today">Aujourd'hui</button>
-    <button class="date-btn" data-range="yesterday">Hier</button>
-    <button class="date-btn" data-range="week">Semaine</button>
-    <button class="date-btn" data-range="month">Mois</button>
+    <div class="select-wrapper">
+        <select id="branchFilter">
+            <option value="">🏪 Tous les magasins</option>
+        </select>
+    </div>
 </div>
 
 <div class="branch-kpis" id="branchKpis"></div>
 
-<div class="dashboard">
+<div class="kpi-grid">
     <div class="kpi">
-        <div class="kpi-icon" style="background:#e5f0ff;">💰</div>
+        <div class="kpi-icon" style="background:rgba(0,122,255,0.12);">💰</div>
         <div>
             <div class="kpi-title">CA Total</div>
             <div class="kpi-value" id="caTotal">0 €</div>
         </div>
     </div>
     <div class="kpi">
-        <div class="kpi-icon" style="background:#ffe5f0;">🧾</div>
+        <div class="kpi-icon" style="background:rgba(175,82,222,0.12);">🧾</div>
         <div>
             <div class="kpi-title">Factures</div>
             <div class="kpi-value" id="nbFactures">0</div>
         </div>
     </div>
     <div class="kpi">
-        <div class="kpi-icon" style="background:#fff0e0;">👥</div>
+        <div class="kpi-icon" style="background:rgba(255,149,0,0.12);">👥</div>
         <div>
             <div class="kpi-title">Clients</div>
             <div class="kpi-value" id="nbClients">0</div>
         </div>
     </div>
     <div class="kpi">
-        <div class="kpi-icon" style="background:#e0f8e9;">🛒</div>
+        <div class="kpi-icon" style="background:rgba(52,199,89,0.12);">🛒</div>
         <div>
             <div class="kpi-title">Panier Moyen</div>
             <div class="kpi-value" id="panierMoyen">0 €</div>
         </div>
     </div>
+</div>
 
-    <div class="panel">
+<div class="dashboard">
+    <div class="panel panel-full">
         <h2>📈 CA horaire</h2>
         <canvas id="hourlyChart"></canvas>
     </div>
 
-    <div class="panel" style="grid-column:span 1;">
+    <div class="panel panel-half">
         <h2>💳 Paiements</h2>
         <canvas id="paymentChart"></canvas>
     </div>
 
-    <div class="panel" style="grid-column:span 1;">
+    <div class="panel panel-half">
         <h2>🏷️ Activités</h2>
         <canvas id="syscodeChart"></canvas>
     </div>
 
-    <div class="panel">
+    <div class="panel panel-full">
         <h2>🎿 Groupes de location</h2>
         <canvas id="rentalGroupChart"></canvas>
     </div>
 
-    <div class="panel">
-        <h2><span class="badge location">Location</span>Top Locations</h2>
-        <div class="table-wrapper">
-        <table id="locationTable">
-            <thead><tr><th>Article</th><th>Contrats</th><th>Jours</th><th>CA</th></tr></thead>
-            <tbody></tbody>
-        </table>
+    <div class="panel panel-third">
+        <h2><span class="badge location">LOCATION</span>Top Locations</h2>
+        <div class="table-container">
+            <table id="locationTable">
+                <thead><tr><th>Article</th><th>Contrats</th><th>Jours</th><th>CA</th></tr></thead>
+                <tbody></tbody>
+            </table>
         </div>
     </div>
 
-    <div class="panel">
-        <h2><span class="badge" style="background:#e0f8e9;color:var(--green);">Vente</span>Top Ventes</h2>
-        <div class="table-wrapper">
-        <table id="salesTable">
-            <thead><tr><th>Article</th><th>Qté</th><th>CA</th></tr></thead>
-            <tbody></tbody>
-        </table>
+    <div class="panel panel-third">
+        <h2><span class="badge sale">VENTE</span>Top Ventes</h2>
+        <div class="table-container">
+            <table id="salesTable">
+                <thead><tr><th>Article</th><th>Qté</th><th>CA</th></tr></thead>
+                <tbody></tbody>
+            </table>
         </div>
     </div>
 
-    <div class="panel">
-        <h2><span class="badge" style="background:#fff0e0;color:var(--orange);">Service</span>Top Services</h2>
-        <div class="table-wrapper">
-        <table id="serviceTable">
-            <thead><tr><th>Service</th><th>Nb</th><th>CA</th></tr></thead>
-            <tbody></tbody>
-        </table>
+    <div class="panel panel-third">
+        <h2><span class="badge service">SERVICE</span>Top Services</h2>
+        <div class="table-container">
+            <table id="serviceTable">
+                <thead><tr><th>Service</th><th>Nb</th><th>CA</th></tr></thead>
+                <tbody></tbody>
+            </table>
         </div>
     </div>
 </div>
 
 <script>
+// ============================================
+// ⚙️ CONFIGURATION DES BASE SYSCODES
+// ============================================
 const SYSCODES = {
     L: { label: 'Location', color: '#007aff', icon: '🎿' },
     M: { label: 'Vente',    color: '#34c759', icon: '🛒' },
     S: { label: 'Service',  color: '#ff9500', icon: '🔧' }
 };
 
-const API_BASE = 'https://80.13.18.153:11133/easyrest/rest/easyrest/invoices?accessId=bweb123!&top=500';
-const PROXY = 'https://api.allorigins.win/raw?url=';
+const BASE_URL ='https://80.13.18.153:11133/easyrest/rest/easyrest/invoices?accessId=bweb123!&top=500';
 
 let allInvoices = [];
 let currentRange = 'today';
@@ -212,22 +396,30 @@ function getDateBounds(range) {
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     let start, end, label;
+
     switch(range) {
         case 'today':
-            start = today; end = new Date(today); end.setDate(end.getDate() + 1);
-            label = "Aujourd'hui (" + today.toLocaleDateString('fr-FR') + ")"; break;
+            start = today;
+            end = new Date(today); end.setDate(end.getDate() + 1);
+            label = "Aujourd'hui (" + today.toLocaleDateString('fr-FR') + ")";
+            break;
         case 'yesterday':
-            start = new Date(today); start.setDate(start.getDate() - 1); end = today;
-            label = "Hier (" + start.toLocaleDateString('fr-FR') + ")"; break;
+            start = new Date(today); start.setDate(start.getDate() - 1);
+            end = today;
+            label = "Hier (" + start.toLocaleDateString('fr-FR') + ")";
+            break;
         case 'week':
-            start = new Date(today); const day = start.getDay() || 7;
+            start = new Date(today);
+            const day = start.getDay() || 7;
             start.setDate(start.getDate() - day + 1);
             end = new Date(today); end.setDate(end.getDate() + 1);
-            label = "Semaine du " + start.toLocaleDateString('fr-FR'); break;
+            label = "Semaine du " + start.toLocaleDateString('fr-FR');
+            break;
         case 'month':
             start = new Date(now.getFullYear(), now.getMonth(), 1);
             end = new Date(now.getFullYear(), now.getMonth() + 1, 1);
-            label = now.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' }); break;
+            label = now.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
+            break;
     }
     return { start, end, label };
 }
@@ -243,22 +435,18 @@ function filterByDate(invoices, range) {
 async function loadInvoices(createdAfter) {
     let invoices = [];
     let skip = 0;
+    const url = BASE_URL + '&createdAfter=' + createdAfter + '&skip=';
+
     while(true) {
-        const fullUrl = API_BASE + '&createdAfter=' + createdAfter + '&skip=' + skip;
-        const proxyUrl = PROXY + encodeURIComponent(fullUrl);
-        try {
-            const response = await fetch(proxyUrl);
-            if (!response.ok) throw new Error('HTTP ' + response.status);
-            const batch = await response.json();
-            if (!Array.isArray(batch)) { console.error('Réponse non valide:', batch); break; }
-            invoices.push(...batch);
-            if(batch.length < 500) break;
-            skip += 500;
-        } catch(e) {
-            console.error('Erreur:', e);
-            document.getElementById('periodLabel').innerText = '⚠️ Erreur de connexion';
+        const response = await fetch(url + skip);
+        const batch = await response.json();
+        if (!Array.isArray(batch)) {
+            console.error('Réponse non valide:', batch);
             break;
         }
+        invoices.push(...batch);
+        if(batch.length < 500) break;
+        skip += 500;
     }
     return invoices;
 }
@@ -268,7 +456,31 @@ function euro(val) {
 }
 
 function chartOptions() {
-    return { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } } } };
+    return {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'bottom',
+                labels: {
+                    usePointStyle: true,
+                    padding: 16,
+                    font: { family: "-apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif", size: 12 }
+                }
+            },
+            tooltip: {
+                backgroundColor: 'rgba(0,0,0,0.8)',
+                padding: 12,
+                cornerRadius: 12,
+                titleFont: { weight: '600' },
+                bodyFont: { size: 13 }
+            }
+        },
+        scales: {
+            x: { grid: { display: false }, ticks: { font: { size: 11 } } },
+            y: { grid: { color: 'rgba(0,0,0,0.04)' }, ticks: { font: { size: 11 } }, beginAtZero: true }
+        }
+    };
 }
 
 function destroyCharts() {
@@ -277,24 +489,24 @@ function destroyCharts() {
 }
 
 function fillTable(selector, data, mapper) {
-    const tbody = document.querySelector(selector + ' tbody');
+    const tbody = document.querySelector(selector);
     tbody.innerHTML = '';
     data.forEach(row => { tbody.innerHTML += mapper(row); });
 }
 
 function renderBranchKpis(invoices) {
     const container = document.getElementById('branchKpis');
-    if (!invoices.length) { container.innerHTML = ''; return; }
     const branches = {};
     invoices.forEach(inv => {
         const b = inv.branchCode || 'Inconnu';
         if(!branches[b]) branches[b] = { ca:0, count:0, clients:new Set() };
-        branches[b].ca += inv.totalInclTax || 0;
+        branches[b].ca += inv.totalInclTax;
         branches[b].count++;
-        if (inv.customerData?.customerId) branches[b].clients.add(inv.customerData.customerId);
+        branches[b].clients.add(inv.customerData.customerId);
     });
-    const totalCA = invoices.reduce((s,i)=>s+(i.totalInclTax||0),0);
+
     container.innerHTML = '';
+    const totalCA = invoices.reduce((s,i)=>s+i.totalInclTax,0);
     Object.entries(branches).sort((a,b) => b[1].ca - a[1].ca).forEach(([name, data]) => {
         const div = document.createElement('div');
         div.className = 'branch-kpi-block';
@@ -305,6 +517,7 @@ function renderBranchKpis(invoices) {
                 <div class="kpi-mini"><div class="kpi-title">Factures</div><div class="kpi-value">${data.count}</div></div>
                 <div class="kpi-mini"><div class="kpi-title">Clients</div><div class="kpi-value">${data.clients.size}</div></div>
                 <div class="kpi-mini"><div class="kpi-title">Panier moy.</div><div class="kpi-value">${euro(data.ca/data.count)}</div></div>
+                <div class="kpi-mini"><div class="kpi-title">Part CA</div><div class="kpi-value">${totalCA ? ((data.ca/totalCA)*100).toFixed(1) : 0}%</div></div>
             </div>
         `;
         container.appendChild(div);
@@ -313,42 +526,53 @@ function renderBranchKpis(invoices) {
 
 function render(invoices, label) {
     destroyCharts();
+
     let totalCA = 0;
     const customers = new Set();
-    const payments = {}, groups = {}, hourly = {}, syscodes = {};
+    const payments = {};
+    const groups = {};
+    const hourly = {};
+    const syscodes = {};
     Object.keys(SYSCODES).forEach(c => syscodes[c] = 0);
     const locations = {}, ventes = {}, services = {};
 
     invoices.forEach(invoice => {
-        totalCA += invoice.totalInclTax || 0;
-        if (invoice.customerData?.customerId) customers.add(invoice.customerData.customerId);
+        totalCA += invoice.totalInclTax;
+        customers.add(invoice.customerData.customerId);
+
         const hour = new Date(invoice.createdAt).getHours();
-        hourly[hour] = (hourly[hour] || 0) + (invoice.totalInclTax || 0);
-        (invoice.payments || []).forEach(p => {
-            payments[p.paymentTypeName] = (payments[p.paymentTypeName] || 0) + (p.amount || 0);
+        hourly[hour] = (hourly[hour] || 0) + invoice.totalInclTax;
+
+        invoice.payments.forEach(p => {
+            payments[p.paymentTypeName] = (payments[p.paymentTypeName] || 0) + p.amount;
         });
-        (invoice.items || []).forEach(item => {
+
+        invoice.items.forEach(item => {
             const code = item.baseSyscode || item.syscode;
-            if(syscodes[code] !== undefined) syscodes[code] += item.totalPrice || 0;
+
+            if(syscodes[code] !== undefined) {
+                syscodes[code] += item.totalPrice;
+            }
+
             if(code === 'L') {
                 if(!locations[item.articleName]) locations[item.articleName] = { contrats:0, jours:0, ca:0 };
                 locations[item.articleName].contrats++;
-                locations[item.articleName].jours += item.quantity || 0;
-                locations[item.articleName].ca += item.totalPrice || 0;
-                if(item.rentalData?.rentalGroupName) {
+                locations[item.articleName].jours += item.quantity;
+                locations[item.articleName].ca += item.totalPrice;
+                if(item.rentalData) {
                     const g = item.rentalData.rentalGroupName;
-                    groups[g] = (groups[g] || 0) + (item.totalPrice || 0);
+                    groups[g] = (groups[g] || 0) + item.totalPrice;
                 }
             }
             if(code === 'M') {
                 if(!ventes[item.articleName]) ventes[item.articleName] = { qty:0, ca:0 };
-                ventes[item.articleName].qty += item.quantity || 0;
-                ventes[item.articleName].ca += item.totalPrice || 0;
+                ventes[item.articleName].qty += item.quantity;
+                ventes[item.articleName].ca += item.totalPrice;
             }
             if(code === 'S') {
                 if(!services[item.articleName]) services[item.articleName] = { nb:0, ca:0 };
                 services[item.articleName].nb++;
-                services[item.articleName].ca += item.totalPrice || 0;
+                services[item.articleName].ca += item.totalPrice;
             }
         });
     });
@@ -362,51 +586,93 @@ function render(invoices, label) {
     const hours = Object.keys(hourly).sort((a,b) => a-b);
     charts.hourly = new Chart(document.getElementById('hourlyChart'), {
         type: 'line',
-        data: { labels: hours.map(h => h + 'h'), datasets: [{ label: 'CA (€)', data: hours.map(h => hourly[h]), borderColor: '#007aff', backgroundColor: 'rgba(0,122,255,0.1)', fill: true, tension: 0.4, pointRadius: 3 }] },
+        data: {
+            labels: hours.map(h => h + 'h'),
+            datasets: [{
+                label: 'CA (€)',
+                data: hours.map(h => hourly[h]),
+                borderColor: '#007aff',
+                backgroundColor: 'rgba(0,122,255,0.1)',
+                fill: true,
+                tension: 0.4,
+                borderWidth: 2.5,
+                pointRadius: 3,
+                pointBackgroundColor: '#007aff'
+            }]
+        },
         options: chartOptions()
     });
 
     charts.payment = new Chart(document.getElementById('paymentChart'), {
         type: 'doughnut',
-        data: { labels: Object.keys(payments), datasets: [{ data: Object.values(payments), backgroundColor: ['#007aff','#34c759','#ff9500','#af52de','#ff3b30','#5ac8fa'] }] },
-        options: chartOptions()
+        data: {
+            labels: Object.keys(payments),
+            datasets: [{
+                data: Object.values(payments),
+                backgroundColor: ['#007aff','#34c759','#ff9500','#af52de','#ff3b30','#5ac8fa'],
+                borderWidth: 0,
+                hoverOffset: 8
+            }]
+        },
+        options: { ...chartOptions(), cutout: '60%' }
     });
 
     const activeSyscodes = Object.keys(SYSCODES).filter(c => syscodes[c] > 0);
     charts.syscode = new Chart(document.getElementById('syscodeChart'), {
         type: 'pie',
-        data: { labels: activeSyscodes.map(c => SYSCODES[c].icon + ' ' + SYSCODES[c].label), datasets: [{ data: activeSyscodes.map(c => syscodes[c]), backgroundColor: activeSyscodes.map(c => SYSCODES[c].color) }] },
-        options: chartOptions()
+        data: {
+            labels: activeSyscodes.map(c => SYSCODES[c].icon + ' ' + SYSCODES[c].label),
+            datasets: [{
+                data: activeSyscodes.map(c => syscodes[c]),
+                backgroundColor: activeSyscodes.map(c => SYSCODES[c].color),
+                borderWidth: 0,
+                hoverOffset: 8
+            }]
+        },
+        options: { ...chartOptions(), cutout: '0%' }
     });
 
     const groupEntries = Object.entries(groups).sort((a,b) => b[1]-a[1]).slice(0,10);
     charts.groups = new Chart(document.getElementById('rentalGroupChart'), {
         type: 'bar',
-        data: { labels: groupEntries.map(g => g[0]), datasets: [{ label: 'CA (€)', data: groupEntries.map(g => g[1]), backgroundColor: '#af52de', borderRadius: 8 }] },
+        data: {
+            labels: groupEntries.map(g => g[0]),
+            datasets: [{
+                label: 'CA (€)',
+                data: groupEntries.map(g => g[1]),
+                backgroundColor: '#af52de',
+                borderRadius: 8,
+                borderSkipped: false
+            }]
+        },
         options: { ...chartOptions(), scales: { y: { beginAtZero: true } } }
     });
 
-    fillTable('#locationTable', Object.entries(locations).sort((a,b)=>b[1].ca-a[1].ca).slice(0,10),
+    fillTable('#locationTable tbody',
+        Object.entries(locations).sort((a,b)=>b[1].ca-a[1].ca).slice(0,10),
         ([n,r])=>`<tr><td>${n}</td><td>${r.contrats}</td><td>${r.jours}</td><td>${euro(r.ca)}</td></tr>`);
-    fillTable('#salesTable', Object.entries(ventes).sort((a,b)=>b[1].ca-a[1].ca).slice(0,10),
+    fillTable('#salesTable tbody',
+        Object.entries(ventes).sort((a,b)=>b[1].ca-a[1].ca).slice(0,10),
         ([n,r])=>`<tr><td>${n}</td><td>${r.qty}</td><td>${euro(r.ca)}</td></tr>`);
-    fillTable('#serviceTable', Object.entries(services).sort((a,b)=>b[1].ca-a[1].ca).slice(0,10),
+    fillTable('#serviceTable tbody',
+        Object.entries(services).sort((a,b)=>b[1].ca-a[1].ca).slice(0,10),
         ([n,r])=>`<tr><td>${n}</td><td>${r.nb}</td><td>${euro(r.ca)}</td></tr>`);
 }
 
 async function refresh() {
     const { start, label } = getDateBounds(currentRange);
     const createdAfter = start.toISOString().split('T')[0];
-    document.getElementById('periodLabel').innerText = 'Chargement...';
+
     allInvoices = await loadInvoices(createdAfter);
     const filtered = filterByDate(allInvoices, currentRange);
 
     const select = document.getElementById('branchFilter');
     const currentBranch = select.value;
     select.innerHTML = '<option value="">🏪 Tous les magasins</option>';
-    [...new Set(filtered.map(i => i.branchCode).filter(Boolean))].sort().forEach(b => {
+    [...new Set(filtered.map(i => i.branchCode))].sort().forEach(b => {
         const opt = document.createElement('option');
-        opt.value = b; opt.textContent = '🏪 ' + b;
+        opt.value = b;
+        opt.textContent = '🏪 ' + b;
         select.appendChild(opt);
     });
     select.value = currentBranch;
@@ -424,14 +690,16 @@ async function start() {
         const v = select.value;
         render(v ? filtered.filter(i => i.branchCode === v) : filtered, label + (v ? ' — ' + v : ''));
     });
-    document.querySelectorAll('.date-btn').forEach(btn => {
+
+    document.querySelectorAll('#dateBar button').forEach(btn => {
         btn.addEventListener('click', async () => {
-            document.querySelectorAll('.date-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('#dateBar button').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
             currentRange = btn.dataset.range;
             await refresh();
         });
     });
+
     await refresh();
 }
 
