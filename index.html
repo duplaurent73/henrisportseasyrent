@@ -160,7 +160,8 @@ const SYSCODES = {
     // Ajoute ici : G: { label: 'Garantie', color: '#8b5cf6', icon: '🛡️' }
 };
 
-const BASE_URL = 'https://api.allorigins.win/raw?url=' + encodeURIComponent('https://unlusty-hudson-leadless.ngrok-free.dev/easyrest/rest/easyrest/invoices?accessId=bweb123!&top=500');
+const API_URL = 'https://unlusty-hudson-leadless.ngrok-free.dev/easyrest/rest/easyrest/invoices?accessId=bweb123!&top=500';
+const BASE_URL = 'https://corsproxy.io/?' + encodeURIComponent(API_URL);
 
 let allInvoices = [];
 let currentRange = 'today';
